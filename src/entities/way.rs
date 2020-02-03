@@ -1,6 +1,7 @@
 use std::collections::BTreeMap;
 use crate::entities::segment::Segment;
 
+#[derive(Debug, Clone)]
 pub struct Way {
     id: String,
     nodes: Vec<String>,

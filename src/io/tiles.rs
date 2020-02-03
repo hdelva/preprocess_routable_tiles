@@ -4,7 +4,7 @@ use std::io::Read;
 use std::collections::BTreeMap;
 
 use crate::entities::node::Node;
-use crate::entities::tile::{Tile, TransitTile};
+use crate::entities::tile::{Tile, DerivedTile};
 use crate::entities::way::Way;
 use crate::entities::tile_coord::TileCoordinate;
 use std::fs;
@@ -37,11 +37,6 @@ pub fn load_tile(coordinate: TileCoordinate, path: &str) -> Result<Tile, Error> 
         Err(_) => return Err(Error::NotJson),
     };
 
-    let id = match v["@id"].as_str() {
-        Some(id) => id.to_owned(),
-        _ =>  return Err(Error::MissingID),
-    };
-
     let graph = match v["@graph"].as_array() {
         Some(graph) => graph,
         None => return Err(Error::NotJson),
@@ -65,7 +60,7 @@ pub fn load_tile(coordinate: TileCoordinate, path: &str) -> Result<Tile, Error> 
         }
     }
 
-    Ok(Tile::new(id, coordinate, nodes, ways))
+    Ok(Tile::new(coordinate, nodes, ways))
 }
 
 fn create_node(entity: &Value) -> Result<Node, Error> {
@@ -151,7 +146,7 @@ fn create_way(entity: &Value) -> Result<Way, Error> {
     return Ok(Way::new(id, nodes, max_speed, tags, undefined_tags));
 }
 
-pub fn write_transit_tile(tile: TransitTile, path: &str) {
+pub fn write_derived_tile(tile: DerivedTile, path: &str) {
     let mut graph: Vec<Value> = tile.get_nodes().values().map(|node| {
         let mut blob = BTreeMap::new();
         blob.insert("@type".to_owned(), json!("osm:Node"));

@@ -1,24 +1,27 @@
 use crate::entities::node::Node;
+use crate::entities::profile::Profile;
+use crate::entities::segment::{Segment, WeightedSegment};
+use crate::entities::tile_coord::TileCoordinate;
 use crate::entities::way::Way;
 use std::collections::BTreeMap;
-use crate::entities::tile_coord::TileCoordinate;
-use crate::entities::segment::{Segment, WeightedSegment};
-use crate::entities::profile::Profile;
 
 pub struct Tile {
-    id: String,
     nodes: BTreeMap<String, Node>,
     ways: BTreeMap<String, Way>,
     coordinate: TileCoordinate,
 }
 
 impl Tile {
-    pub fn new(id: String, coordinate: TileCoordinate, nodes: BTreeMap<String, Node>, ways: BTreeMap<String, Way>) -> Tile {
-        Tile {id, coordinate, nodes, ways}
-    }
-
-    pub fn get_id(&self) -> &str {
-        &self.id
+    pub fn new(
+        coordinate: TileCoordinate,
+        nodes: BTreeMap<String, Node>,
+        ways: BTreeMap<String, Way>,
+    ) -> Tile {
+        Tile {
+            coordinate,
+            nodes,
+            ways,
+        }
     }
 
     pub fn get_nodes(&self) -> &BTreeMap<String, Node> {
@@ -34,14 +37,14 @@ impl Tile {
     }
 
     pub fn get_weighted_segments(&self, profile: &Profile) -> Vec<WeightedSegment> {
-        let mut result = vec!();
+        let mut result = vec![];
         for (_, way) in self.get_ways() {
             if !profile.has_access(way) {
                 continue;
             }
 
             for edge in way.get_segments() {
-                let Segment {from, to} = edge;
+                let Segment { from, to } = edge;
                 let from_node = self.get_nodes().get(from).expect("Corrupted tile");
                 let to_node = self.get_nodes().get(to).expect("Corrupted tile");
 
@@ -63,27 +66,31 @@ impl Tile {
     }
 }
 
-pub struct TransitTile<'a> {
+pub struct DerivedTile<'a> {
     nodes: BTreeMap<String, Node>,
     ways: BTreeMap<String, Way>,
-    original: &'a Tile
+    original: &'a Tile,
 }
 
-impl<'a> TransitTile<'a> {
-    pub fn new(nodes:BTreeMap<String, Node>, ways:BTreeMap<String, Way>, original: &'a Tile) -> TransitTile {
-        TransitTile {nodes, ways, original}
+impl<'a> DerivedTile<'a> {
+    pub fn new(
+        nodes: BTreeMap<String, Node>,
+        ways: BTreeMap<String, Way>,
+        original: &'a Tile,
+    ) -> DerivedTile {
+        DerivedTile {
+            nodes,
+            ways,
+            original,
+        }
     }
 
-    pub fn get_nodes(&self) -> &BTreeMap<String, Node>{
+    pub fn get_nodes(&self) -> &BTreeMap<String, Node> {
         &self.nodes
     }
 
     pub fn get_ways(&self) -> &BTreeMap<String, Way> {
         &self.ways
-    }
-
-    pub fn get_id(&self) -> &str {
-        self.original.get_id()
     }
 
     pub fn get_coordinate(&self) -> &TileCoordinate {

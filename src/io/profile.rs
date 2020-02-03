@@ -1,15 +1,23 @@
 use crate::entities::profile::Profile;
 use std::fs::File;
 use std::io::Read;
-use crate::io::get_profile_path;
+use crate::io::{get_car_profile_path, get_pedestrian_profile_path};
 
 #[derive(Debug)]
 pub enum Error {
     NotAFile,
 }
 
-pub fn load_profile() -> Result<Profile, Error> {
-    let mut file = match File::open(get_profile_path()) {
+pub fn load_car_profile() -> Result<Profile, Error> {
+    return load_profile(get_car_profile_path());
+}
+
+pub fn load_pedestrian_profile() -> Result<Profile, Error> {
+    return load_profile(get_pedestrian_profile_path());
+}
+
+fn load_profile(path: &str) -> Result<Profile, Error> {
+    let mut file = match File::open(path) {
         Ok(file) => file,
         _ => return Err(Error::NotAFile),
     };

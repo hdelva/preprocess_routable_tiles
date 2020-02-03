@@ -3,6 +3,7 @@ use serde::{Deserialize, Serialize};
 use crate::entities::way::Way;
 use crate::entities::node::Node;
 use crate::util::haversine::haversine;
+use std::collections::HashSet;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Profile {
@@ -39,6 +40,32 @@ pub struct Conclusion {
 }
 
 impl Profile {
+    pub fn get_used_concepts(&self) -> HashSet<String> {
+        let mut result = HashSet::new();
+
+        let mut extract = |rules: &[Rule]| {
+            for rule in rules.iter() {
+                if let Some(Condition {hasPredicate, hasObject}) = &rule.r#match {
+                    if let Some(uri) = hasPredicate {
+                        result.insert(uri.to_string());
+                    }
+                    if let Some(uri) = hasObject {
+                        result.insert(uri.to_string());
+                    }
+                }
+            }
+        };
+
+        extract(&self.hasAccessRules);
+        extract(&self.hasOnewayRules);
+        extract(&self.hasSpeedRules);
+        extract(&self.hasPriorityRules);
+        extract(&self.hasObstacleRules);
+        extract(&self.hasObstacleTimeRules);
+        
+        return result;
+    }
+
     pub fn is_one_way(&self, way: &Way) -> bool {
         for rule in &self.hasOnewayRules {
             let conclusion = rule.concludes.isOneway.unwrap();
