@@ -1,8 +1,8 @@
 #![allow(non_snake_case)]
+use crate::util::haversine::get_distance;
 use serde::{Deserialize, Serialize};
 use crate::entities::way::Way;
 use crate::entities::node::Node;
-use crate::util::haversine::haversine;
 use std::collections::HashSet;
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -139,13 +139,8 @@ impl Profile {
         return speed_limit.min(self.get_default_speed());
     }
 
-    fn get_distance(&self, from: &Node, to: &Node) -> f64 {
-        // distance in km
-        haversine(from.get_lat(), to.get_lat(),from.get_long(), to.get_long())
-    }
-
     pub fn get_duration(&self, from: &Node, to: &Node, way: &Way) -> f64 {
-        let distance = self.get_distance(from, to);
+        let distance = get_distance(from, to);
         let speed = self.get_speed(way);
         let time = distance / speed; // h
         return time * 60. *60. * 1000.; // ms

@@ -31,6 +31,7 @@ pub fn create_profile_tile<'a>(
             let new_way = Way::new(
                 way_id.to_owned(),
                 way.get_nodes().to_owned(),
+                None,
                 way.get_max_speed().clone(),
                 new_tags,
                 Vec::new(),

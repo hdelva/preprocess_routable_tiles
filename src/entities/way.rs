@@ -5,6 +5,7 @@ use crate::entities::segment::Segment;
 pub struct Way {
     id: String,
     nodes: Vec<String>,
+    distances: Option<Vec<i64>>,
     max_speed: Option<f64>,
     tags: BTreeMap<String, String>,
     undefined_tags: Vec<String>,
@@ -14,11 +15,12 @@ impl Way {
     pub fn new(
         id: String,
         nodes: Vec<String>,
+        distances: Option<Vec<i64>>,
         max_speed: Option<f64>,
         tags: BTreeMap<String, String>,
         undefined_tags: Vec<String>,
     ) -> Way {
-        return Way {id, nodes, max_speed, tags, undefined_tags};
+        return Way {id, nodes, distances, max_speed, tags, undefined_tags};
     }
 
     pub fn get_id(&self) -> &str {
@@ -27,6 +29,10 @@ impl Way {
 
     pub fn get_nodes(&self) -> &[String] {
         &self.nodes
+    }
+
+    pub fn get_distances(&self) -> &Option<Vec<i64>> {
+        &self.distances
     }
 
     pub fn get_max_speed(&self) -> &Option<f64> {

@@ -143,7 +143,7 @@ fn create_way(entity: &Value) -> Result<Way, Error> {
         max_speed = Some(float_value);
     }
 
-    return Ok(Way::new(id, nodes, max_speed, tags, undefined_tags));
+    return Ok(Way::new(id, nodes, None, max_speed, tags, undefined_tags));
 }
 
 pub fn write_derived_tile(tile: DerivedTile, path: &str) {
@@ -169,7 +169,14 @@ pub fn write_derived_tile(tile: DerivedTile, path: &str) {
         let mut blob = BTreeMap::new();
         blob.insert("@type".to_owned(), json!("osm:Way"));
         blob.insert("@id".to_owned(), json!(way.get_id()));
-        blob.insert("osm:hasNodes".to_owned(), json!(way.get_nodes()));
+        if let Some(weights) = way.get_distances() {
+            let mut edges = BTreeMap::new();
+            edges.insert("osm:hasNodes".to_owned(), json!(way.get_nodes()));
+            edges.insert("osm:hasWeights".to_owned(), json!(weights));
+            blob.insert("osm:hasEdges".to_owned(), json!(edges));
+        } else {
+            blob.insert("osm:hasNodes".to_owned(), json!(way.get_nodes()));
+        }
 
         if way.get_undefined_tags().len() > 0 {
             blob.insert("osm:hasTag".to_owned(), json!(way.get_undefined_tags()));

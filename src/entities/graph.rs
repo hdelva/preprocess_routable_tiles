@@ -81,7 +81,7 @@ impl<'a> Graph<'a> {
         self.labels.get(id)
     }
 
-    pub fn necessary_nodes(&self, from: &str, to: Vec<&str>) -> BTreeSet<String> {
+    pub fn necessary_nodes(&self, from: &str, to: Vec<&String>) -> BTreeSet<String> {
         if self.get_label(from).is_none() {
             return BTreeSet::new();
         }

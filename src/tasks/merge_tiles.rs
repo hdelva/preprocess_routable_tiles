@@ -143,6 +143,7 @@ pub fn create_merged_tile<'a>(
             let way = Way::new(
                 way_id.clone(),
                 nodes,
+                None,
                 example_way.get_max_speed().clone(),
                 example_way.get_tags().clone(),
                 example_way.get_undefined_tags().to_vec(),

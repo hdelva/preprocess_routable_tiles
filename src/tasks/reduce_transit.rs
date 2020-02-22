@@ -40,7 +40,7 @@ pub fn create_transit_tile<'a>(
             edge_nodes
                 .iter()
                 .filter(|id| *id != first_node)
-                .map(|id| *id)
+                .map(|id| id)
                 .collect(),
         );
         necessary_nodes.append(&mut result);
@@ -68,6 +68,7 @@ pub fn create_transit_tile<'a>(
             let way = Way::new(
                 way_id.clone(),
                 nodes,
+                None,
                 way.get_max_speed().clone(),
                 way.get_tags().clone(),
                 way.get_undefined_tags().to_vec(),

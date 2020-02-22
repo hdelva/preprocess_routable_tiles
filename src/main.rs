@@ -1,6 +1,7 @@
 #![recursion_limit = "128"]
 
 extern crate clap;
+use crate::tasks::reduce_contract::create_contracted_tile;
 use crate::io::profile::load_bicycle_profile;
 use crate::tasks::merge_tiles::create_merged_tile;
 use crate::tasks::reduce_profile::create_profile_tile;
@@ -138,6 +139,10 @@ fn main() {
                 ),
         )
         .subcommand(
+            SubCommand::with_name("reduce_contract")
+                .about("Only retain nodes that"),
+        )
+        .subcommand(
             SubCommand::with_name("merge")
                 .about("Merge routable tiles into tiles of a higher zoom level"),
         )
@@ -216,6 +221,24 @@ fn main() {
                 let profile_tile_path = get_tile_path(output_dir, id);
                 let profile_tile = create_transit_tile(&index, id, &profile);
                 write_derived_tile(profile_tile, &profile_tile_path);
+                bar.inc(1);
+            });
+
+            bar.finish();
+        }
+        Some("reduce_contract") => {
+            let index = load_tiles(input_dir, lats, lons, zoom);
+            let bar = ProgressBar::new(index.len() as u64);
+            bar.set_style(
+                ProgressStyle::default_bar()
+                    .template("Contracting ways [{elapsed_precise}] {wide_bar:.cyan/blue} {pos:>7}/{len:7} {msg}")
+                    .progress_chars("█▓░"),
+            );
+
+            index.par_iter().for_each(|(id, _)| {
+                let contracted_tile_path = get_tile_path(output_dir, id);
+                let contracted_tile = create_contracted_tile(&index, id);
+                write_derived_tile(contracted_tile, &contracted_tile_path);
                 bar.inc(1);
             });
 
