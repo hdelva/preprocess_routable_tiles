@@ -66,22 +66,22 @@ impl Tile {
     }
 }
 
-pub struct DerivedTile<'a> {
+pub struct DerivedTile {
     nodes: BTreeMap<String, Node>,
     ways: BTreeMap<String, Way>,
-    original: &'a Tile,
+    coordinate: TileCoordinate,
 }
 
-impl<'a> DerivedTile<'a> {
+impl DerivedTile {
     pub fn new(
+        coordinate: TileCoordinate,
         nodes: BTreeMap<String, Node>,
         ways: BTreeMap<String, Way>,
-        original: &'a Tile,
     ) -> DerivedTile {
         DerivedTile {
             nodes,
             ways,
-            original,
+            coordinate,
         }
     }
 
@@ -94,6 +94,6 @@ impl<'a> DerivedTile<'a> {
     }
 
     pub fn get_coordinate(&self) -> &TileCoordinate {
-        &self.original.get_coordinate()
+        &self.coordinate
     }
 }

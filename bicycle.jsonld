@@ -1,0 +1,1192 @@
+{
+  "@context": {
+    "osm": "https://w3id.org/openstreetmap/terms#",
+    "opp": "https://w3id.org/openplannerteam/profile#",
+    "prov": "http://www.w3.org/ns/prov#",
+    "hasMaxSpeed": {
+      "@id": "opp:hasMaxSpeed"
+    },
+    "usePublicTransport": {
+      "@id": "opp:usePublicTransport"
+    },
+    "hasAccessRules": {
+      "@id": "opp:hasAccessRules"
+    },
+    "hasOnewayRules": {
+      "@id": "opp:hasOnewayRules"
+    },
+    "hasSpeedRules": {
+      "@id": "opp:hasSpeedRules"
+    },
+    "hasPriorityRules": {
+      "@id": "opp:hasPriorityRules"
+    },
+    "hasObstacleRules": {
+      "@id": "opp:hasObstacleRules"
+    },
+    "hasObstacleTimeRules": {
+      "@id": "opp:hasObstacleTimeRules"
+    },
+    "hasAccess": {
+      "@id": "opp:hasAccess"
+    },
+    "isOneway": {
+      "@id": "opp:isOneway"
+    },
+    "isReversed": {
+      "@id": "opp:isReversed"
+    },
+    "hasSpeed": {
+      "@id": "opp:hasSpeed"
+    },
+    "isObstacle": {
+      "@id": "opp:isObstacle"
+    },
+    "hasObstacleTime": {
+      "@id": "opp:hasObstacleTime"
+    },
+    "hasPriority": {
+      "@id": "opp:hasPriority"
+    },
+    "concludes": {
+      "@id": "opp:concludes"
+    },
+    "hasOrder": {
+      "@id": "opp:hasOrder"
+    },
+    "match": {
+      "@id": "opp:match"
+    },
+    "hasPredicate": {
+      "@id": "opp:hasPredicate",
+      "@type": "@id"
+    },
+    "hasObject": {
+      "@id": "opp:hasObject",
+      "@type": "@id"
+    }
+  },
+  "rdfs:label": "example bicycle profile",
+  "hasMaxSpeed": 35,
+  "usePublicTransport": false,
+  "hasAccessRules": [
+    {
+      "match": {
+        "hasPredicate": "osm:highway",
+        "hasObject": "osm:Proposed"
+      },
+      "concludes": {
+        "hasAccess": false
+      },
+      "hasOrder": 0
+    },
+    {
+      "match": {
+        "hasPredicate": "osm:construction",
+        "hasObject": "osm:UnderConstruction"
+      },
+      "concludes": {
+        "hasAccess": false
+      },
+      "hasOrder": 0
+    },
+    {
+      "match": {
+        "hasPredicate": "osm:highway",
+        "hasObject": "osm:Steps"
+      },
+      "concludes": {
+        "hasAccess": false
+      },
+      "hasOrder": 1
+    },
+    {
+      "match": {
+        "hasPredicate": "osm:highway",
+        "hasObject": "osm:Motorway"
+      },
+      "concludes": {
+        "hasAccess": false
+      },
+      "hasOrder": 1
+    },
+    {
+      "match": {
+        "hasPredicate": "osm:highway",
+        "hasObject": "osm:MotorwayLink"
+      },
+      "concludes": {
+        "hasAccess": false
+      },
+      "hasOrder": 1
+    },
+    {
+      "match": {
+        "hasPredicate": "osm:highway",
+        "hasObject": "osm:Trunk"
+      },
+      "concludes": {
+        "hasAccess": false
+      },
+      "hasOrder": 1
+    },
+    {
+      "match": {
+        "hasPredicate": "osm:highway",
+        "hasObject": "osm:TrunkLink"
+      },
+      "concludes": {
+        "hasAccess": false
+      },
+      "hasOrder": 1
+    },
+    {
+      "match": {
+        "hasPredicate": "osm:bicycle",
+        "hasObject": "osm:NoAccess"
+      },
+      "concludes": {
+        "hasAccess": false
+      },
+      "hasOrder": 2
+    },
+    {
+      "match": {
+        "hasPredicate": "osm:bicycle",
+        "hasObject": "osm:FreeAccess"
+      },
+      "concludes": {
+        "hasAccess": true
+      },
+      "hasOrder": 2
+    },
+    {
+      "match": {
+        "hasPredicate": "osm:bicycle",
+        "hasObject": "osm:Private"
+      },
+      "concludes": {
+        "hasAccess": false
+      },
+      "hasOrder": 2
+    },
+    {
+      "match": {
+        "hasPredicate": "osm:bicycle",
+        "hasObject": "osm:Permissive"
+      },
+      "concludes": {
+        "hasAccess": true
+      },
+      "hasOrder": 2
+    },
+    {
+      "match": {
+        "hasPredicate": "osm:bicycle",
+        "hasObject": "osm:Designated"
+      },
+      "concludes": {
+        "hasAccess": true
+      },
+      "hasOrder": 2
+    },
+    {
+      "match": {
+        "hasPredicate": "osm:bicycle",
+        "hasObject": "osm:Destination"
+      },
+      "concludes": {
+        "hasAccess": true
+      },
+      "hasOrder": 2
+    },
+    {
+      "match": {
+        "hasPredicate": "osm:bicycle",
+        "hasObject": "osm:Customers"
+      },
+      "concludes": {
+        "hasAccess": true
+      },
+      "hasOrder": 2
+    },
+    {
+      "match": {
+        "hasPredicate": "osm:bicycle",
+        "hasObject": "osm:Official"
+      },
+      "concludes": {
+        "hasAccess": true
+      },
+      "hasOrder": 2
+    },
+    {
+      "match": {
+        "hasPredicate": "osm:bicycle",
+        "hasObject": "osm:NoAccess"
+      },
+      "concludes": {
+        "hasAccess": false
+      },
+      "hasOrder": 3
+    },
+    {
+      "match": {
+        "hasPredicate": "osm:vehicle",
+        "hasObject": "osm:NoAccess"
+      },
+      "concludes": {
+        "hasAccess": false
+      },
+      "hasOrder": 4
+    },
+    {
+      "match": {
+        "hasPredicate": "osm:vehicle",
+        "hasObject": "osm:Agricultural"
+      },
+      "concludes": {
+        "hasAccess": true
+      },
+      "hasOrder": 4
+    },
+    {
+      "match": {
+        "hasPredicate": "osm:vehicle",
+        "hasObject": "osm:Forestry"
+      },
+      "concludes": {
+        "hasAccess": true
+      },
+      "hasOrder": 4
+    },
+    {
+      "match": {
+        "hasPredicate": "osm:vehicle",
+        "hasObject": "osm:FreeAccess"
+      },
+      "concludes": {
+        "hasAccess": true
+      },
+      "hasOrder": 4
+    },
+    {
+      "match": {
+        "hasPredicate": "osm:vehicle",
+        "hasObject": "osm:Private"
+      },
+      "concludes": {
+        "hasAccess": false
+      },
+      "hasOrder": 4
+    },
+    {
+      "match": {
+        "hasPredicate": "osm:vehicle",
+        "hasObject": "osm:Permissive"
+      },
+      "concludes": {
+        "hasAccess": true
+      },
+      "hasOrder": 4
+    },
+    {
+      "match": {
+        "hasPredicate": "osm:vehicle",
+        "hasObject": "osm:Designated"
+      },
+      "concludes": {
+        "hasAccess": true
+      },
+      "hasOrder": 4
+    },
+    {
+      "match": {
+        "hasPredicate": "osm:vehicle",
+        "hasObject": "osm:Destination"
+      },
+      "concludes": {
+        "hasAccess": true
+      },
+      "hasOrder": 4
+    },
+    {
+      "match": {
+        "hasPredicate": "osm:access",
+        "hasObject": "osm:NoAccess"
+      },
+      "concludes": {
+        "hasAccess": false
+      },
+      "hasOrder": 5
+    },
+    {
+      "match": {
+        "hasPredicate": "osm:access",
+        "hasObject": "osm:Agricultural"
+      },
+      "concludes": {
+        "hasAccess": true
+      },
+      "hasOrder": 5
+    },
+    {
+      "match": {
+        "hasPredicate": "osm:access",
+        "hasObject": "osm:Forestry"
+      },
+      "concludes": {
+        "hasAccess": true
+      },
+      "hasOrder": 5
+    },
+    {
+      "match": {
+        "hasPredicate": "osm:access",
+        "hasObject": "osm:FreeAccess"
+      },
+      "concludes": {
+        "hasAccess": true
+      },
+      "hasOrder": 5
+    },
+    {
+      "match": {
+        "hasPredicate": "osm:access",
+        "hasObject": "osm:Private"
+      },
+      "concludes": {
+        "hasAccess": false
+      },
+      "hasOrder": 5
+    },
+    {
+      "match": {
+        "hasPredicate": "osm:access",
+        "hasObject": "osm:Permissive"
+      },
+      "concludes": {
+        "hasAccess": true
+      },
+      "hasOrder": 5
+    },
+    {
+      "match": {
+        "hasPredicate": "osm:access",
+        "hasObject": "osm:Destination"
+      },
+      "concludes": {
+        "hasAccess": true
+      },
+      "hasOrder": 5
+    },
+    {
+      "match": {
+        "hasPredicate": "osm:highway",
+        "hasObject": "osm:Primary"
+      },
+      "concludes": {
+        "hasAccess": true
+      },
+      "hasOrder": 6
+    },
+    {
+      "match": {
+        "hasPredicate": "osm:highway",
+        "hasObject": "osm:PrimaryLink"
+      },
+      "concludes": {
+        "hasAccess": true
+      },
+      "hasOrder": 6
+    },
+    {
+      "match": {
+        "hasPredicate": "osm:highway",
+        "hasObject": "osm:Secondary"
+      },
+      "concludes": {
+        "hasAccess": true
+      },
+      "hasOrder": 6
+    },
+    {
+      "match": {
+        "hasPredicate": "osm:highway",
+        "hasObject": "osm:SecondaryLink"
+      },
+      "concludes": {
+        "hasAccess": true
+      },
+      "hasOrder": 6
+    },
+    {
+      "match": {
+        "hasPredicate": "osm:highway",
+        "hasObject": "osm:Tertiary"
+      },
+      "concludes": {
+        "hasAccess": true
+      },
+      "hasOrder": 6
+    },
+    {
+      "match": {
+        "hasPredicate": "osm:highway",
+        "hasObject": "osm:TertiaryLink"
+      },
+      "concludes": {
+        "hasAccess": true
+      },
+      "hasOrder": 6
+    },
+    {
+      "match": {
+        "hasPredicate": "osm:highway",
+        "hasObject": "osm:Unclassified"
+      },
+      "concludes": {
+        "hasAccess": true
+      },
+      "hasOrder": 6
+    },
+    {
+      "match": {
+        "hasPredicate": "osm:highway",
+        "hasObject": "osm:Road"
+      },
+      "concludes": {
+        "hasAccess": true
+      },
+      "hasOrder": 6
+    },
+    {
+      "match": {
+        "hasPredicate": "osm:highway",
+        "hasObject": "osm:Residential"
+      },
+      "concludes": {
+        "hasAccess": true
+      },
+      "hasOrder": 6
+    },
+    {
+      "match": {
+        "hasPredicate": "osm:highway",
+        "hasObject": "osm:Unclassified"
+      },
+      "concludes": {
+        "hasAccess": true
+      },
+      "hasOrder": 6
+    },
+    {
+      "match": {
+        "hasPredicate": "osm:highway",
+        "hasObject": "osm:Track"
+      },
+      "concludes": {
+        "hasAccess": true
+      },
+      "hasOrder": 6
+    },
+    {
+      "match": {
+        "hasPredicate": "osm:highway",
+        "hasObject": "osm:Service"
+      },
+      "concludes": {
+        "hasAccess": true
+      },
+      "hasOrder": 6
+    },
+    {
+      "match": {
+        "hasPredicate": "osm:highway",
+        "hasObject": "osm:LivingStreet"
+      },
+      "concludes": {
+        "hasAccess": true
+      },
+      "hasOrder": 6
+    },
+    {
+      "match": {
+        "hasPredicate": "osm:highway",
+        "hasObject": "osm:Path"
+      },
+      "concludes": {
+        "hasAccess": true
+      },
+      "hasOrder": 6
+    },
+    {
+      "match": {
+        "hasPredicate": "osm:highway",
+        "hasObject": "osm:FootHighway"
+      },
+      "concludes": {
+        "hasAccess": true
+      },
+      "hasOrder": 6
+    },
+    {
+      "concludes": {
+        "hasAccess": false
+      },
+      "hasOrder": 100
+    }
+  ],
+  "hasOnewayRules": [
+    {
+      "match": {
+        "hasPredicate": "osm:oneway_bicycle",
+        "hasObject": "osm:InOrder"
+      },
+      "concludes": {
+        "isOneway": true,
+        "isReversed": false
+      },
+      "hasOrder": 0
+    },
+    {
+      "match": {
+        "hasPredicate": "osm:oneway_bicycle",
+        "hasObject": "osm:InReverseOrder"
+      },
+      "concludes": {
+        "isOneway": true,
+        "isReversed": true
+      },
+      "hasOrder": 0
+    },
+    {
+      "match": {
+        "hasPredicate": "osm:oneway_bicycle",
+        "hasObject": "osm:Bidirectional"
+      },
+      "concludes": {
+        "isOneway": false
+      },
+      "hasOrder": 0
+    },
+    {
+      "match": {
+        "hasPredicate": "osm:oneway",
+        "hasObject": "osm:InOrder"
+      },
+      "concludes": {
+        "isOneway": true,
+        "isReversed": false
+      },
+      "hasOrder": 0
+    },
+    {
+      "match": {
+        "hasPredicate": "osm:oneway",
+        "hasObject": "osm:InReverseOrder"
+      },
+      "concludes": {
+        "isOneway": true,
+        "isReversed": true
+      },
+      "hasOrder": 0
+    },
+    {
+      "match": {
+        "hasPredicate": "osm:oneway",
+        "hasObject": "osm:Bidirectional"
+      },
+      "concludes": {
+        "isOneway": false
+      },
+      "hasOrder": 0
+    },
+    {
+      "concludes": {
+        "isOneway": false
+      },
+      "hasOrder": 100
+    }
+  ],
+  "hasSpeedRules": [
+    {
+      "match": {
+        "hasPredicate": "osm:highway",
+        "hasObject": "osm:Primary"
+      },
+      "concludes": {
+        "hasSpeed": 10
+      },
+      "hasOrder": 1
+    },
+    {
+      "match": {
+        "hasPredicate": "osm:highway",
+        "hasObject": "osm:PrimaryLink"
+      },
+      "concludes": {
+        "hasSpeed": 10
+      },
+      "hasOrder": 1
+    },
+    {
+      "match": {
+        "hasPredicate": "osm:highway",
+        "hasObject": "osm:Secondary"
+      },
+      "concludes": {
+        "hasSpeed": 13
+      },
+      "hasOrder": 1
+    },
+    {
+      "match": {
+        "hasPredicate": "osm:highway",
+        "hasObject": "osm:SecondaryLink"
+      },
+      "concludes": {
+        "hasSpeed": 13
+      },
+      "hasOrder": 1
+    },
+    {
+      "match": {
+        "hasPredicate": "osm:highway",
+        "hasObject": "osm:Tertiary"
+      },
+      "concludes": {
+        "hasSpeed": 18
+      },
+      "hasOrder": 1
+    },
+    {
+      "match": {
+        "hasPredicate": "osm:highway",
+        "hasObject": "osm:TertiaryLink"
+      },
+      "concludes": {
+        "hasSpeed": 18
+      },
+      "hasOrder": 1
+    },
+    {
+      "match": {
+        "hasPredicate": "osm:highway",
+        "hasObject": "osm:Unclassified"
+      },
+      "concludes": {
+        "hasSpeed": 23
+      },
+      "hasOrder": 1
+    },
+    {
+      "match": {
+        "hasPredicate": "osm:highway",
+        "hasObject": "osm:Road"
+      },
+      "concludes": {
+        "hasSpeed": 19
+      },
+      "hasOrder": 1
+    },
+    {
+      "match": {
+        "hasPredicate": "osm:highway",
+        "hasObject": "osm:Residential"
+      },
+      "concludes": {
+        "hasSpeed": 23
+      },
+      "hasOrder": 1
+    },
+    {
+      "match": {
+        "hasPredicate": "osm:highway",
+        "hasObject": "osm:Track"
+      },
+      "concludes": {
+        "hasSpeed": 22
+      },
+      "hasOrder": 1
+    },
+    {
+      "match": {
+        "hasPredicate": "osm:highway",
+        "hasObject": "osm:Service"
+      },
+      "concludes": {
+        "hasSpeed": 11
+      },
+      "hasOrder": 1
+    },
+    {
+      "match": {
+        "hasPredicate": "osm:highway",
+        "hasObject": "osm:LivingStreet"
+      },
+      "concludes": {
+        "hasSpeed": 24
+      },
+      "hasOrder": 1
+    },
+    {
+      "concludes": {
+        "hasSpeed": 14.5
+      },
+      "hasOrder": 100
+    }
+  ],
+  "hasPriorityRules": [
+    {
+      "match": {
+        "hasPredicate": "osm:bicycle",
+        "hasObject": "osm:Private"
+      },
+      "concludes": {
+        "hasPriority": 0.1
+      },
+      "hasOrder": 0
+    },
+    {
+      "match": {
+        "hasPredicate": "osm:bicycle",
+        "hasObject": "osm:Destination"
+      },
+      "concludes": {
+        "hasPriority": 0.2
+      },
+      "hasOrder": 0
+    },
+    {
+      "match": {
+        "hasPredicate": "osm:surface",
+        "hasObject": "osm:Sett"
+      },
+      "concludes": {
+        "hasPriority": 0.2
+      },
+      "hasOrder": 1
+    },
+    {
+      "match": {
+        "hasPredicate": "osm:surface",
+        "hasObject": "osm:Cobblestone"
+      },
+      "concludes": {
+        "hasPriority": 0.2
+      },
+      "hasOrder": 1
+    },
+    {
+      "match": {
+        "hasPredicate": "osm:surface",
+        "hasObject": "osm:UnhewnCobblestone"
+      },
+      "concludes": {
+        "hasPriority": 0.2
+      },
+      "hasOrder": 1
+    },
+    {
+      "match": {
+        "hasPredicate": "osm:tracktype",
+        "hasObject": "osm:Grade5"
+      },
+      "concludes": {
+        "hasPriority": 0.5
+      },
+      "hasOrder": 2
+    },
+    {
+      "match": {
+        "hasPredicate": "osm:smoothness",
+        "hasObject": "osm:HorribleSmoothness"
+      },
+      "concludes": {
+        "hasPriority": 0.2
+      },
+      "hasOrder": 3
+    },
+    {
+      "match": {
+        "hasPredicate": "osm:smoothness",
+        "hasObject": "osm:VeryHorribleSmoothness"
+      },
+      "concludes": {
+        "hasPriority": 0.15
+      },
+      "hasOrder": 3
+    },
+    {
+      "match": {
+        "hasPredicate": "osm:smoothness",
+        "hasObject": "osm:ImpassableSmoothness"
+      },
+      "concludes": {
+        "hasPriority": 0.1
+      },
+      "hasOrder": 3
+    },
+    {
+      "match": {
+        "hasPredicate": "osm:cycleway"
+      },
+      "concludes": {
+        "hasPriority": 1.4
+      },
+      "hasOrder": 4
+    },
+    {
+      "match": {
+        "hasPredicate": "osm:highway",
+        "hasObject": "osm:Primary"
+      },
+      "concludes": {
+        "hasPriority": 1
+      },
+      "hasOrder": 5
+    },
+    {
+      "match": {
+        "hasPredicate": "osm:highway",
+        "hasObject": "osm:Secondary"
+      },
+      "concludes": {
+        "hasPriority": 1
+      },
+      "hasOrder": 5
+    },
+    {
+      "match": {
+        "hasPredicate": "osm:highway",
+        "hasObject": "osm:Tertiary"
+      },
+      "concludes": {
+        "hasPriority": 1
+      },
+      "hasOrder": 5
+    },
+    {
+      "match": {
+        "hasPredicate": "osm:highway",
+        "hasObject": "osm:Service"
+      },
+      "concludes": {
+        "hasPriority": 1
+      },
+      "hasOrder": 5
+    },
+    {
+      "match": {
+        "hasPredicate": "osm:surface",
+        "hasObject": "osm:Asphalt"
+      },
+      "concludes": {
+        "hasPriority": 1.35
+      },
+      "hasOrder": 6
+    },
+    {
+      "match": {
+        "hasPredicate": "osm:surface",
+        "hasObject": "osm:Paved"
+      },
+      "concludes": {
+        "hasPriority": 1.35
+      },
+      "hasOrder": 6
+    },
+    {
+      "match": {
+        "hasPredicate": "osm:surface",
+        "hasObject": "osm:Concrete"
+      },
+      "concludes": {
+        "hasPriority": 1.35
+      },
+      "hasOrder": 6
+    },
+    {
+      "match": {
+        "hasPredicate": "osm:surface",
+        "hasObject": "osm:PavingStones"
+      },
+      "concludes": {
+        "hasPriority": 1.35
+      },
+      "hasOrder": 6
+    },
+    {
+      "match": {
+        "hasPredicate": "osm:highway",
+        "hasObject": "osm:CycleHighway"
+      },
+      "concludes": {
+        "hasPriority": 1.35
+      },
+      "hasOrder": 6
+    },
+    {
+      "match": {
+        "hasPredicate": "osm:bicycle",
+        "hasObject": "osm:Official"
+      },
+      "concludes": {
+        "hasPriority": 1.8
+      },
+      "hasOrder": 7
+    },
+    {
+      "match": {
+        "hasPredicate": "osm:bicycle",
+        "hasObject": "osm:Designated"
+      },
+      "concludes": {
+        "hasPriority": 1.8
+      },
+      "hasOrder": 6
+    },
+    {
+      "concludes": {
+        "hasPriority": 1.0
+      },
+      "hasOrder": 100
+    }
+  ],
+  "hasObstacleRules": [
+    {
+      "match": {
+        "hasPredicate": "osm:bicycle",
+        "hasObject": "osm:NoAccess"
+      },
+      "concludes": {
+        "isObstacle": true
+      },
+      "hasOrder": 0
+    },
+    {
+      "match": {
+        "hasPredicate": "osm:vehicle",
+        "hasObject": "osm:NoAccess"
+      },
+      "concludes": {
+        "isObstacle": true
+      },
+      "hasOrder": 2
+    },
+    {
+      "match": {
+        "hasPredicate": "osm:access",
+        "hasObject": "osm:NoAccess"
+      },
+      "concludes": {
+        "isObstacle": true
+      },
+      "hasOrder": 3
+    },
+    {
+      "match": {
+        "hasPredicate": "osm:barrier",
+        "hasObject": "osm:Bollard"
+      },
+      "concludes": {
+        "isObstacle": true
+      },
+      "hasOrder": 4
+    },
+    {
+      "match": {
+        "hasPredicate": "osm:barrier",
+        "hasObject": "osm:Chain"
+      },
+      "concludes": {
+        "isObstacle": true
+      },
+      "hasOrder": 4
+    },
+    {
+      "match": {
+        "hasPredicate": "osm:barrier",
+        "hasObject": "osm:Debris"
+      },
+      "concludes": {
+        "isObstacle": true
+      },
+      "hasOrder": 4
+    },
+    {
+      "match": {
+        "hasPredicate": "osm:barrier",
+        "hasObject": "osm:Block"
+      },
+      "concludes": {
+        "isObstacle": true
+      },
+      "hasOrder": 4
+    },
+    {
+      "match": {
+        "hasPredicate": "osm:barrier",
+        "hasObject": "osm:Gate"
+      },
+      "concludes": {
+        "isObstacle": true
+      },
+      "hasOrder": 4
+    },
+    {
+      "match": {
+        "hasPredicate": "osm:barrier",
+        "hasObject": "osm:CycleBarrier"
+      },
+      "concludes": {
+        "isObstacle": true
+      },
+      "hasOrder": 4
+    },
+    {
+      "concludes": {
+        "isObstacle": false
+      },
+      "hasOrder": 100
+    }
+  ],
+  "hasObstacleTimeRules": [
+    {
+      "match": {
+        "hasPredicate": "osm:barrier",
+        "hasObject": "osm:Entrance"
+      },
+      "concludes": {
+        "hasObstacleTime": 5
+      },
+      "hasOrder": 0
+    },
+    {
+      "match": {
+        "hasPredicate": "osm:barrier",
+        "hasObject": "osm:Gate"
+      },
+      "concludes": {
+        "hasObstacleTime": 15
+      },
+      "hasOrder": 0
+    },
+    {
+      "match": {
+        "hasPredicate": "osm:barrier",
+        "hasObject": "osm:LiftGate"
+      },
+      "concludes": {
+        "hasObstacleTime": 15
+      },
+      "hasOrder": 0
+    },
+    {
+      "match": {
+        "hasPredicate": "osm:barrier",
+        "hasObject": "osm:SwingGate"
+      },
+      "concludes": {
+        "hasObstacleTime": 30
+      },
+      "hasOrder": 0
+    },
+    {
+      "match": {
+        "hasPredicate": "osm:barrier",
+        "hasObject": "osm:TollBooth"
+      },
+      "concludes": {
+        "hasObstacleTime": 25
+      },
+      "hasOrder": 0
+    },
+    {
+      "match": {
+        "hasPredicate": "osm:barrier"
+      },
+      "concludes": {
+        "hasObstacleTime": 25
+      },
+      "hasOrder": 1
+    },
+    {
+      "match": {
+        "hasPredicate": "osm:highway",
+        "hasObject": "osm:TrafficSignals"
+      },
+      "concludes": {
+        "hasObstacleTime": 30
+      },
+      "hasOrder": 2
+    },
+    {
+      "match": {
+        "hasPredicate": "osm:crossing",
+        "hasObject": "osm:Unmarked"
+      },
+      "concludes": {
+        "hasObstacleTime": 1
+      },
+      "hasOrder": 3
+    },
+    {
+      "match": {
+        "hasPredicate": "osm:crossing",
+        "hasObject": "osm:Uncontrolled"
+      },
+      "concludes": {
+        "hasObstacleTime": 5
+      },
+      "hasOrder": 3
+    },
+    {
+      "match": {
+        "hasPredicate": "osm:crossing",
+        "hasObject": "osm:Uncontrolled"
+      },
+      "concludes": {
+        "hasObstacleTime": 5
+      },
+      "hasOrder": 3
+    },
+    {
+      "match": {
+        "hasPredicate": "osm:highway",
+        "hasObject": "osm:HighwayCrossing"
+      },
+      "concludes": {
+        "hasObstacleTime": 15
+      },
+      "hasOrder": 4
+    },
+    {
+      "match": {
+        "hasPredicate": "osm:highway",
+        "hasObject": "osm:Stop"
+      },
+      "concludes": {
+        "hasObstacleTime": 15
+      },
+      "hasOrder": 4
+    },
+    {
+      "match": {
+        "hasPredicate": "osm:highway",
+        "hasObject": "osm:GiveWay"
+      },
+      "concludes": {
+        "hasObstacleTime": 10
+      },
+      "hasOrder": 4
+    },
+    {
+      "concludes": {
+        "hasObstacleTime": 0
+      },
+      "hasOrder": 100
+    }
+  ]
+}

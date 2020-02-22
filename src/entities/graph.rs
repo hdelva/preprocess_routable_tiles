@@ -98,10 +98,6 @@ impl<'a> Graph<'a> {
         dist[from_label] = 0;
         heap.push(0, from_label);
 
-        //let aa = *self.get_label("http://www.openstreetmap.org/node/259231219").unwrap();
-        //let aaa = *self.get_label("http://www.openstreetmap.org/node/2203691697").unwrap();
-        //println!("INT: {:#?}\n FUCK: {:#?}", self.adj_list[aa], self.adj_list[aaa]);
-
         while let Some((cost, position)) = heap.pop() {
             to_labels.remove(&position);
 
@@ -132,10 +128,12 @@ impl<'a> Graph<'a> {
                 continue;
             }
             let mut current_label = *self.get_label(to_id).unwrap();
+            result.insert(self.ids[current_label].to_owned());
             while previous[current_label] != from_label {
                 result.insert(self.ids[current_label].to_owned());
                 current_label = previous[current_label];
             }
+            result.insert(self.ids[current_label].to_owned());
         }
 
         return result

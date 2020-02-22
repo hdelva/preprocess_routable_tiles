@@ -16,6 +16,6 @@ clap =  {version = "2.33.0", features = ["unstable"]}
 
 [profile.release]
 opt-level = 3
-debug = true
+debug = false
 rpath = false
 lto = true

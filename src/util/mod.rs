@@ -1,4 +1,5 @@
 pub mod haversine;
+pub mod edge_nodes;
 
 use crate::entities::tile_coord::TileCoordinate;
 
