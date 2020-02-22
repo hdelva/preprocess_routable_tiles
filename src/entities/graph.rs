@@ -136,6 +136,6 @@ impl<'a> Graph<'a> {
             result.insert(self.ids[current_label].to_owned());
         }
 
-        return result
+        result
     }
 }

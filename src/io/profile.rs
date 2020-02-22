@@ -9,15 +9,15 @@ pub enum Error {
 }
 
 pub fn load_car_profile() -> Result<Profile, Error> {
-    return load_profile(get_car_profile_path());
+    load_profile(get_car_profile_path())
 }
 
 pub fn load_pedestrian_profile() -> Result<Profile, Error> {
-    return load_profile(get_pedestrian_profile_path());
+    load_profile(get_pedestrian_profile_path())
 }
 
 pub fn load_bicycle_profile() -> Result<Profile, Error> {
-    return load_profile(get_bicycle_profile_path());
+    load_profile(get_bicycle_profile_path())
 }
 
 fn load_profile(path: &str) -> Result<Profile, Error> {
@@ -27,9 +27,8 @@ fn load_profile(path: &str) -> Result<Profile, Error> {
     };
 
     let mut data = String::new();
-    match file.read_to_string(&mut data) {
-        Err(_) => return Err(Error::NotAFile),
-        _ => {},
+    if file.read_to_string(&mut data).is_err() {
+        return Err(Error::NotAFile);
     };
 
     Ok(serde_json::from_str(&data).unwrap())

@@ -1,5 +1,5 @@
-pub mod haversine;
 pub mod edge_nodes;
+pub mod haversine;
 
 use crate::entities::tile_coord::TileCoordinate;
 
@@ -10,7 +10,8 @@ pub fn num2deg(x: u32, y: u32, zoom: u32) -> [f64; 2] {
     let wat: f64 = pi * (1f64 - 2f64 * f64::from(y) / n);
     let lat_rad = wat.sinh().atan();
     let lat_deg = lat_rad.to_degrees();
-    return [lat_deg, lon];
+
+    [lat_deg, lon]
 }
 
 pub fn deg2num(lat: f64, lon: f64, zoom: u32) -> TileCoordinate {
@@ -27,7 +28,7 @@ pub fn deg2num(lat: f64, lon: f64, zoom: u32) -> TileCoordinate {
 pub fn get_tile_edges(coords: &TileCoordinate) -> [f64; 4] {
     let [north, west] = num2deg(coords.x, coords.y, coords.zoom);
     let [south, east] = num2deg(coords.x + 1, coords.y + 1, coords.zoom);
-    return [east, north, west, south];
+    [east, north, west, south]
 }
 
 pub fn get_tile_coords(lats: [f64; 2], lons: [f64; 2], zoom: u32) -> Vec<TileCoordinate> {
@@ -37,12 +38,12 @@ pub fn get_tile_coords(lats: [f64; 2], lons: [f64; 2], zoom: u32) -> Vec<TileCoo
     let top_left = deg2num(max_lat, min_lon, zoom);
     let bottom_right = deg2num(min_lat, max_lon, zoom);
 
-    let mut result = vec!();
+    let mut result = vec![];
 
-    for x in top_left.x .. bottom_right.x + 1 {
-        for y in top_left.y .. bottom_right.y + 1 {
+    for x in top_left.x..=bottom_right.x {
+        for y in top_left.y..=bottom_right.y {
             result.push(TileCoordinate::new(x, y, zoom));
         }
     }
-    return result;
+    result
 }

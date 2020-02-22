@@ -1,9 +1,9 @@
 #![recursion_limit = "128"]
 
 extern crate clap;
-use crate::tasks::reduce_contract::create_contracted_tile;
 use crate::io::profile::load_bicycle_profile;
 use crate::tasks::merge_tiles::create_merged_tile;
+use crate::tasks::reduce_contract::create_contracted_tile;
 use crate::tasks::reduce_profile::create_profile_tile;
 use crate::tasks::reduce_transit::create_transit_tile;
 use clap::{App, AppSettings, Arg, SubCommand};
@@ -19,10 +19,10 @@ extern crate serde_json;
 
 use crate::entities::tile::Tile;
 use crate::entities::tile_coord::TileCoordinate;
+use crate::io::get_tile_path;
 use crate::io::profile::load_car_profile;
 use crate::io::profile::load_pedestrian_profile;
 use crate::io::tiles::write_derived_tile;
-use crate::io::get_tile_path;
 use crate::util::get_tile_coords;
 use indicatif::{ProgressBar, ProgressStyle};
 use rayon::prelude::*;
@@ -52,7 +52,7 @@ fn load_tiles(
         .map(|coordinate| {
             let path = get_tile_path(root, &coordinate);
             parse_bar.inc(1);
-            return io::tiles::load_tile(coordinate, &path).ok();
+            io::tiles::load_tile(coordinate, &path).ok()
         })
         .collect();
 
@@ -65,7 +65,7 @@ fn load_tiles(
     }
 
     parse_bar.finish();
-    return index;
+    index
 }
 
 // create weighted edge graph around a given tile
@@ -138,10 +138,7 @@ fn main() {
                         .takes_value(true),
                 ),
         )
-        .subcommand(
-            SubCommand::with_name("reduce_contract")
-                .about("Only retain nodes that"),
-        )
+        .subcommand(SubCommand::with_name("reduce_contract").about("Only retain nodes that"))
         .subcommand(
             SubCommand::with_name("merge")
                 .about("Merge routable tiles into tiles of a higher zoom level"),
@@ -180,8 +177,8 @@ fn main() {
             println!("Used concepts: {:?}", profile.get_used_concepts());
 
             let index = load_tiles(input_dir, lats, lons, zoom);
-            let bar = ProgressBar::new(index.len() as u64);
-            bar.set_style(
+            let progress = ProgressBar::new(index.len() as u64);
+            progress.set_style(
                 ProgressStyle::default_bar()
                     .template("Pruning Tags [{elapsed_precise}] {wide_bar:.cyan/blue} {pos:>7}/{len:7} {msg}")
                     .progress_chars("█▓░"),
@@ -191,10 +188,10 @@ fn main() {
                 let profile_tile_path = get_tile_path(output_dir, id);
                 let profile_tile = create_profile_tile(&index, id, &profile);
                 write_derived_tile(profile_tile, &profile_tile_path);
-                bar.inc(1);
+                progress.inc(1);
             });
 
-            bar.finish();
+            progress.finish();
         }
         Some("reduce_transit") => {
             let profile_name = matches
@@ -210,8 +207,8 @@ fn main() {
             };
 
             let index = load_tiles(input_dir, lats, lons, zoom);
-            let bar = ProgressBar::new(index.len() as u64);
-            bar.set_style(
+            let progress = ProgressBar::new(index.len() as u64);
+            progress.set_style(
                 ProgressStyle::default_bar()
                     .template("Pruning Ways [{elapsed_precise}] {wide_bar:.cyan/blue} {pos:>7}/{len:7} {msg}")
                     .progress_chars("█▓░"),
@@ -221,15 +218,15 @@ fn main() {
                 let profile_tile_path = get_tile_path(output_dir, id);
                 let profile_tile = create_transit_tile(&index, id, &profile);
                 write_derived_tile(profile_tile, &profile_tile_path);
-                bar.inc(1);
+                progress.inc(1);
             });
 
-            bar.finish();
+            progress.finish();
         }
         Some("reduce_contract") => {
             let index = load_tiles(input_dir, lats, lons, zoom);
-            let bar = ProgressBar::new(index.len() as u64);
-            bar.set_style(
+            let progress = ProgressBar::new(index.len() as u64);
+            progress.set_style(
                 ProgressStyle::default_bar()
                     .template("Contracting ways [{elapsed_precise}] {wide_bar:.cyan/blue} {pos:>7}/{len:7} {msg}")
                     .progress_chars("█▓░"),
@@ -239,10 +236,10 @@ fn main() {
                 let contracted_tile_path = get_tile_path(output_dir, id);
                 let contracted_tile = create_contracted_tile(&index, id);
                 write_derived_tile(contracted_tile, &contracted_tile_path);
-                bar.inc(1);
+                progress.inc(1);
             });
 
-            bar.finish();
+            progress.finish();
         }
         Some("merge") => {
             let index = load_tiles(input_dir, lats, lons, zoom);
@@ -252,8 +249,8 @@ fn main() {
                 todo.insert(source_coord.get_parent());
             }
 
-            let bar = ProgressBar::new(todo.len() as u64);
-            bar.set_style(
+            let progress = ProgressBar::new(todo.len() as u64);
+            progress.set_style(
                 ProgressStyle::default_bar()
                     .template("Merging tiles [{elapsed_precise}] {wide_bar:.cyan/blue} {pos:>7}/{len:7} {msg}")
                     .progress_chars("█▓░"),
@@ -264,10 +261,10 @@ fn main() {
                 let c = id.get_children();
                 let merged_tile = create_merged_tile(&index, &c, id);
                 write_derived_tile(merged_tile, &merged_tile_path);
-                bar.inc(1);
+                progress.inc(1);
             });
 
-            bar.finish();
+            progress.finish();
         }
         _ => unreachable!(),
     };

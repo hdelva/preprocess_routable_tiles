@@ -5,20 +5,20 @@ pub mod profile;
 pub mod tiles;
 
 pub fn get_car_profile_path() -> &'static str {
-    return "./car.jsonld";
+    "./car.jsonld"
 }
 
 pub fn get_pedestrian_profile_path() -> &'static str {
-    return "./pedestrian.jsonld";
+    "./pedestrian.jsonld"
 }
 
 pub fn get_bicycle_profile_path() -> &'static str {
-    return "./bicycle.jsonld";
+    "./bicycle.jsonld"
 }
 
 pub fn get_tile_path(root: &str, tile: &TileCoordinate) -> String {
     let dir = format!("{}/{}/{}/", root, tile.zoom, tile.x);
-    if !fs::metadata(&dir).is_ok() {
+    if fs::metadata(&dir).is_err() {
         fs::create_dir_all(&dir).ok();
     }
 

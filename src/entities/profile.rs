@@ -63,7 +63,7 @@ impl Profile {
         extract(&self.hasObstacleRules);
         extract(&self.hasObstacleTimeRules);
         
-        return result;
+        result
     }
 
     pub fn is_one_way(&self, way: &Way) -> bool {
@@ -83,7 +83,7 @@ impl Profile {
             }
         }
 
-        return false;
+        false
     }
 
     pub fn has_access(&self, way: &Way) -> bool {
@@ -103,11 +103,11 @@ impl Profile {
             }
         }
 
-        return true;
+        true
     }
 
     pub fn get_default_speed(&self) -> f64 {
-        return 5.;
+        5.
     }
 
     pub fn get_max_speed(&self) -> f64 {
@@ -136,14 +136,14 @@ impl Profile {
             }
         }
 
-        return speed_limit.min(self.get_default_speed());
+        speed_limit.min(self.get_default_speed())
     }
 
     pub fn get_duration(&self, from: &Node, to: &Node, way: &Way) -> f64 {
         let distance = get_distance(from, to);
         let speed = self.get_speed(way);
         let time = distance / speed; // h
-        return time * 60. *60. * 1000.; // ms
+        time * 60. *60. * 1000. // ms
     }
 
     pub fn get_multiplier(&self, way: &Way) -> f64 {
@@ -163,7 +163,7 @@ impl Profile {
             }
         }
 
-        return 1.;
+        1.
     }
 
     pub fn get_cost(&self, from: &Node, to: &Node, way: &Way) -> f64 {
@@ -189,7 +189,7 @@ impl Profile {
             }
         }
 
-        return false;
+        false
     }
 
     pub fn get_obstacle_time(&self, node: &Node) -> f64 {
@@ -209,6 +209,6 @@ impl Profile {
             }
         }
 
-        return 0.;
+        0.
     }
 }

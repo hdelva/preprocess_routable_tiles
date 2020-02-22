@@ -17,7 +17,7 @@ impl Node {
         tags: BTreeMap<String, String>,
         undefined_tags: Vec<String>,
     ) -> Node {
-        return Node {id, lat, long, tags, undefined_tags};
+        Node {id, lat, long, tags, undefined_tags}
     }
 
     pub fn get_id(&self) -> &str {

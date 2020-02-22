@@ -8,9 +8,9 @@ pub fn get_edge_nodes(tile: &Tile, bounds: [f64; 4]) -> BTreeSet<String> {
         let lat = node.get_lat();
         let long = node.get_long();
 
-        if !(s <= lat && lat <= n) || !(w <= long && long <= e) {
+        if !(s <= lat && lat <= n && w <= long && long <= e) {
             oob.insert(node.get_id().to_owned());
         }
     }
-    return oob;
+    oob
 }

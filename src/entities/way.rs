@@ -20,7 +20,7 @@ impl Way {
         tags: BTreeMap<String, String>,
         undefined_tags: Vec<String>,
     ) -> Way {
-        return Way {id, nodes, distances, max_speed, tags, undefined_tags};
+        Way {id, nodes, distances, max_speed, tags, undefined_tags}
     }
 
     pub fn get_id(&self) -> &str {
@@ -52,6 +52,6 @@ impl Way {
         for i in 0 .. self.get_nodes().len() - 1 {
             result.push(Segment::new(&self.get_nodes()[i],  &self.get_nodes()[i + 1]));
         }
-        return result;
+        result
     }
 }

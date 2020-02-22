@@ -27,10 +27,9 @@ pub fn load_tile(coordinate: TileCoordinate, path: &str) -> Result<Tile, Error> 
     };
 
     let mut data = String::new();
-    match file.read_to_string(&mut data) {
-        Err(_) => return Err(Error::InvalidFile(path.to_string())),
-        _ => {},
-    };
+    if file.read_to_string(&mut data).is_err() {
+        return Err(Error::InvalidFile(path.to_string()));
+    }
 
     let v: Value = match serde_json::from_str(&data) {
         Ok(v) => v,
@@ -100,7 +99,7 @@ fn create_node(entity: &Value) -> Result<Node, Error> {
             .collect();
     }
 
-    return Ok(Node::new(id, lat, long, tags, undefined_tags));
+    Ok(Node::new(id, lat, long, tags, undefined_tags))
 }
 
 fn create_way(entity: &Value) -> Result<Way, Error> {
@@ -143,7 +142,7 @@ fn create_way(entity: &Value) -> Result<Way, Error> {
         max_speed = Some(float_value);
     }
 
-    return Ok(Way::new(id, nodes, None, max_speed, tags, undefined_tags));
+    Ok(Way::new(id, nodes, None, max_speed, tags, undefined_tags))
 }
 
 pub fn write_derived_tile(tile: DerivedTile, path: &str) {
@@ -154,7 +153,7 @@ pub fn write_derived_tile(tile: DerivedTile, path: &str) {
         blob.insert("geo:long".to_owned(), json!(node.get_long()));
         blob.insert("geo:lat".to_owned(), json!(node.get_lat()));
 
-        if node.get_undefined_tags().len() > 0 {
+        if !node.get_undefined_tags().is_empty() {
             blob.insert("osm:hasTag".to_owned(), json!(node.get_undefined_tags()));
         }
 
@@ -178,7 +177,7 @@ pub fn write_derived_tile(tile: DerivedTile, path: &str) {
             blob.insert("osm:hasNodes".to_owned(), json!(way.get_nodes()));
         }
 
-        if way.get_undefined_tags().len() > 0 {
+        if !way.get_undefined_tags().is_empty() {
             blob.insert("osm:hasTag".to_owned(), json!(way.get_undefined_tags()));
         }
 

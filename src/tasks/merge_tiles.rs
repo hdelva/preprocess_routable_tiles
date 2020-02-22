@@ -17,16 +17,17 @@ struct WayProxy {
 
 impl WayProxy {
     fn new() -> WayProxy {
-        return WayProxy {
+        WayProxy {
             chains: BTreeMap::new(),
             first_candidates: BTreeSet::new(),
             not_first: BTreeSet::new(),
-        };
+        }
     }
 
     fn add_way(&mut self, way: &Way) {
         for segment in way.get_segments() {
-            self.chains.insert(segment.from.to_string(), segment.to.to_string());
+            self.chains
+                .insert(segment.from.to_string(), segment.to.to_string());
             self.first_candidates.insert(segment.from.to_string());
             self.not_first.insert(segment.to.to_string());
         }
@@ -39,32 +40,31 @@ impl WayProxy {
             return Err(self.first_candidates.union(&self.not_first).collect());
         }
 
-        return Ok(());
+        Ok(())
     }
 
     fn get_node_ids(&mut self) -> Vec<String> {
         let mut result: Vec<String> = Vec::new();
         let intersection: Vec<&String> =
             self.first_candidates.difference(&self.not_first).collect();
-        let mut current_element;
-        if intersection.len() == 0 {
+        let mut current_element = if intersection.is_empty() {
             let temp: Vec<&String> = self.first_candidates.iter().collect();
             if temp.is_empty() {
                 // should never happen, but it still does
                 return Vec::new();
             }
-            current_element = temp[0].to_string();
+            temp[0].to_string()
         } else {
             // only follow one chain
             // will break ways around the edges, but should be fine for now
-            current_element = intersection[0].to_string();
-        }
+            intersection[0].to_string()
+        };
         result.push(current_element.clone());
         while let Some(next) = self.chains.remove(&current_element) {
             result.push(next.clone());
             current_element = next;
         }
-        return result;
+        result
     }
 }
 
@@ -112,7 +112,7 @@ pub fn create_merged_tile<'a>(
                     tile_coords.insert(coord);
                 }
             }
-            if tile_coords.len() == 0 {
+            if tile_coords.is_empty() {
                 break;
             }
             for candidate_coord in tile_coords {
@@ -144,7 +144,7 @@ pub fn create_merged_tile<'a>(
                 way_id.clone(),
                 nodes,
                 None,
-                example_way.get_max_speed().clone(),
+                *example_way.get_max_speed(),
                 example_way.get_tags().clone(),
                 example_way.get_undefined_tags().to_vec(),
             );
@@ -152,5 +152,5 @@ pub fn create_merged_tile<'a>(
         };
     }
 
-    return DerivedTile::new(target_coord.clone(), all_nodes, all_ways);
+    DerivedTile::new(*target_coord, all_nodes, all_ways)
 }

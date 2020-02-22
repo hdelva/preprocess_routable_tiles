@@ -32,7 +32,7 @@ pub fn create_profile_tile<'a>(
                 way_id.to_owned(),
                 way.get_nodes().to_owned(),
                 None,
-                way.get_max_speed().clone(),
+                *way.get_max_speed(),
                 new_tags,
                 Vec::new(),
             );
@@ -48,5 +48,5 @@ pub fn create_profile_tile<'a>(
             }
         }
     }
-    return DerivedTile::new(tile.get_coordinate().clone(), reduced_nodes, reduced_ways);
+    DerivedTile::new(*tile.get_coordinate(), reduced_nodes, reduced_ways)
 }

@@ -38,7 +38,7 @@ impl Tile {
 
     pub fn get_weighted_segments(&self, profile: &Profile) -> Vec<WeightedSegment> {
         let mut result = vec![];
-        for (_, way) in self.get_ways() {
+        for way in self.get_ways().values() {
             if !profile.has_access(way) {
                 continue;
             }
@@ -54,7 +54,7 @@ impl Tile {
 
                 if !profile.is_one_way(way) {
                     let backward_cost = profile.get_cost(to_node, from_node, way);
-                    let reverse_edge = Segment::new(edge.to.clone(), edge.from.clone());
+                    let reverse_edge = Segment::new(edge.to, edge.from);
                     result.push(WeightedSegment::new(reverse_edge, backward_cost as u64));
                 }
 
@@ -62,7 +62,7 @@ impl Tile {
                 result.push(WeightedSegment::new(edge, forward_cost as u64));
             }
         }
-        return result;
+        result
     }
 }
 

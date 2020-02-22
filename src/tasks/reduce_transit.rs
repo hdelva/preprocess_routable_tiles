@@ -20,7 +20,7 @@ fn create_graph<'a>(
         weights.extend(other.get_weighted_segments(profile));
     }
 
-    return Graph::new(weights);
+    Graph::new(weights)
 }
 
 pub fn create_transit_tile<'a>(
@@ -59,7 +59,7 @@ pub fn create_transit_tile<'a>(
         }
 
         if last_node > first_node {
-            let nodes: Vec<String> = way.get_nodes()[first_node..last_node + 1].into();
+            let nodes: Vec<String> = way.get_nodes()[first_node..=last_node].into();
             for node_id in nodes.iter() {
                 let node: Node = tile.get_nodes()[node_id].clone();
                 reduced_nodes.insert(node_id.clone(), node);
@@ -69,7 +69,7 @@ pub fn create_transit_tile<'a>(
                 way_id.clone(),
                 nodes,
                 None,
-                way.get_max_speed().clone(),
+                *way.get_max_speed(),
                 way.get_tags().clone(),
                 way.get_undefined_tags().to_vec(),
             );
@@ -78,7 +78,7 @@ pub fn create_transit_tile<'a>(
     }
 
     DerivedTile::new(
-        tile.get_coordinate().clone(),
+        *tile.get_coordinate(),
         reduced_nodes,
         reduced_ways,
     )
