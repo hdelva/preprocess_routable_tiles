@@ -32,9 +32,6 @@ def deg2num(lat_deg, lon_deg, zoom):
   ytile = int((1.0 - math.log(math.tan(lat_rad) + (1 / math.cos(lat_rad))) / math.pi) / 2.0 * n)
   return (xtile, ytile)
 
-lats_vect = [49, 52];
-lons_vect = [2.25, 6.6];
-
 def deg2num(lat_deg, lon_deg, zoom):
   lat_rad = math.radians(lat_deg)
   n = 2.0 ** zoom
@@ -48,6 +45,10 @@ def num2deg(xtile, ytile, zoom):
   lat_rad = math.atan(math.sinh(math.pi * (1 - 2 * ytile / n)))
   lat_deg = math.degrees(lat_rad)
   return (lat_deg, lon_deg)
+
+# defines the bounding box of required data
+lats_vect = [49, 52];
+lons_vect = [2.25, 6.6];
 
 top_left = deg2num(max(lats_vect), min(lons_vect), 14)
 bottom_right = deg2num(min(lats_vect), max(lons_vect), 14)
