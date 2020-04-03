@@ -3,13 +3,10 @@ import os
 import requests
 from collections import defaultdict
 from tqdm import tqdm
-import hashlib
-import numpy as np
 
 def get_file_name(tile_x, tile_y, zoom):
-  dir_name = 'tiles/{}/{}/'.format(zoom, tile_x)
-  if not os.path.isdir(dir_name):
-    os.mkdir(dir_name)
+  dir_name = os.path.join('tiles', str(zoom), str(tile_x))
+  os.makedirs(dir_name, exist_ok=True)
   return '{}/{}.json'.format(dir_name, tile_y)
 
 def fetch_tile(tile_x, tile_y):
