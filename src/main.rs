@@ -1,6 +1,7 @@
 #![recursion_limit = "128"]
 
 extern crate clap;
+use crate::tasks::reduce_complete::create_complete_tile;
 use crate::io::profile::load_bicycle_profile;
 use crate::tasks::merge_tiles::create_merged_tile;
 use crate::tasks::reduce_contract::create_contracted_tile;
@@ -138,7 +139,24 @@ fn main() {
                         .takes_value(true),
                 ),
         )
-        .subcommand(SubCommand::with_name("reduce_contract").about("Only retain nodes that"))
+        .subcommand(
+            SubCommand::with_name("reduce_complete")
+                .about("Only retain boundary nodes.")
+                .arg(
+                    Arg::with_name("profile")
+                        .short("p")
+                        .long("profile")
+                        .value_name("car|bicycle|pedestrian")
+                        .help("Sets the profile to use")
+                        .possible_values(&["car", "bicycle", "pedestrian"])
+                        .required(true)
+                        .takes_value(true),
+                ),
+        )
+        .subcommand(
+            SubCommand::with_name("reduce_contract")
+                .about("Only retain nodes that are relevant for route planning."),
+        )
         .subcommand(
             SubCommand::with_name("merge")
                 .about("Merge routable tiles into tiles of a higher zoom level"),
@@ -236,6 +254,36 @@ fn main() {
                 let contracted_tile_path = get_tile_path(output_dir, id);
                 let contracted_tile = create_contracted_tile(&index, id);
                 write_derived_tile(contracted_tile, &contracted_tile_path);
+                progress.inc(1);
+            });
+
+            progress.finish();
+        }
+        Some("reduce_complete") => {
+            let profile_name = matches
+                .subcommand_matches("reduce_complete")
+                .expect("Subcommand arguments are missing")
+                .value_of("profile")
+                .unwrap();
+            let profile = match profile_name {
+                "car" => load_car_profile().unwrap(),
+                "pedestrian" => load_pedestrian_profile().unwrap(),
+                "bicycle" => load_bicycle_profile().unwrap(),
+                _ => unreachable!(),
+            };
+
+            let index = load_tiles(input_dir, lats, lons, zoom);
+            let progress = ProgressBar::new(index.len() as u64);
+            progress.set_style(
+                ProgressStyle::default_bar()
+                    .template("Building complete graph between boundary nodes [{elapsed_precise}] {wide_bar:.cyan/blue} {pos:>7}/{len:7} {msg}")
+                    .progress_chars("█▓░"),
+            );
+
+            index.par_iter().for_each(|(id, _)| {
+                let profile_tile_path = get_tile_path(output_dir, id);
+                let profile_tile = create_complete_tile(&index, id, &profile);
+                write_derived_tile(profile_tile, &profile_tile_path);
                 progress.inc(1);
             });
 

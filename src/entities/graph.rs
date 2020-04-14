@@ -1,8 +1,8 @@
-use std::cmp::Ordering;
-use std::collections::{BTreeMap, BTreeSet, HashSet};
 use crate::entities::segment::WeightedSegment;
-use std::collections::btree_map::Entry;
 use radix_heap::Radix;
+use std::cmp::Ordering;
+use std::collections::btree_map::Entry;
+use std::collections::{BTreeMap, BTreeSet, HashSet};
 
 #[derive(Copy, Clone, Eq, PartialEq)]
 struct State {
@@ -21,7 +21,8 @@ impl Radix for State {
 
 impl Ord for State {
     fn cmp(&self, other: &State) -> Ordering {
-        self.cost.cmp(&other.cost)
+        self.cost
+            .cmp(&other.cost)
             .then_with(|| self.position.cmp(&other.position))
     }
 }
@@ -41,15 +42,19 @@ struct Edge {
 pub struct Graph<'a> {
     ids: Vec<&'a str>,
     labels: BTreeMap<&'a str, usize>,
-    adj_list: Vec<Vec<Edge>>
+    adj_list: Vec<Vec<Edge>>,
 }
 
 impl<'a> Graph<'a> {
     pub fn new(segments: Vec<WeightedSegment<'a>>) -> Graph<'a> {
         let labels = BTreeMap::new();
-        let adj_list= vec!();
-        let ids = vec!();
-        let mut graph = Graph { ids, labels, adj_list };
+        let adj_list = vec![];
+        let ids = vec![];
+        let mut graph = Graph {
+            ids,
+            labels,
+            adj_list,
+        };
         graph.add_edges(segments);
         graph
     }
@@ -58,7 +63,10 @@ impl<'a> Graph<'a> {
         for segment in segments {
             let from_label = self.get_label_mut(segment.segment.from);
             let to_label = self.get_label_mut(segment.segment.to);
-            let edge = Edge {node: to_label, cost: segment.weight as i64};
+            let edge = Edge {
+                node: to_label,
+                cost: segment.weight as i64,
+            };
 
             self.adj_list[from_label].push(edge);
         }
@@ -86,7 +94,47 @@ impl<'a> Graph<'a> {
             return BTreeSet::new();
         }
         let from_label = *self.get_label(from).unwrap();
-        let mut to_labels: HashSet<usize> = to.iter()
+        let (tree, _) = self.query_one_to_many(from, &to);
+
+        let mut result = BTreeSet::new();
+
+        for to_id in to {
+            if self.get_label(to_id).is_none() {
+                continue;
+            }
+            let mut current_label = *self.get_label(to_id).unwrap();
+            result.insert(self.ids[current_label].to_owned());
+            while tree[current_label] != from_label {
+                result.insert(self.ids[current_label].to_owned());
+                current_label = tree[current_label];
+            }
+            result.insert(self.ids[current_label].to_owned());
+        }
+
+        result
+    }
+
+    pub fn query_costs(&self, from: &str, to: Vec<&String>) -> BTreeMap<String, i64> {
+        if self.get_label(from).is_none() {
+            return BTreeMap::new();
+        }
+        let (_, costs) = self.query_one_to_many(from, &to);
+
+        let mut result = BTreeMap::new();
+
+        for to_id in to {
+            if let Some(to_label) = self.get_label(to_id) {
+                result.insert(to_id.to_owned(), costs[*to_label]);
+            }
+        }
+
+        result
+    }
+
+    fn query_one_to_many(&self, from: &str, to: &[&String]) -> (Vec<usize>, Vec<i64>) {
+        let from_label = *self.get_label(from).unwrap();
+        let mut to_labels: HashSet<usize> = to
+            .iter()
             .map(|id| self.get_label(id))
             .filter(|id| id.is_some())
             .map(|id| *id.unwrap())
@@ -120,22 +168,6 @@ impl<'a> Graph<'a> {
                 }
             }
         }
-
-        let mut result = BTreeSet::new();
-
-        for to_id in to {
-            if self.get_label(to_id).is_none() {
-                continue;
-            }
-            let mut current_label = *self.get_label(to_id).unwrap();
-            result.insert(self.ids[current_label].to_owned());
-            while previous[current_label] != from_label {
-                result.insert(self.ids[current_label].to_owned());
-                current_label = previous[current_label];
-            }
-            result.insert(self.ids[current_label].to_owned());
-        }
-
-        result
+        return (previous, dist);
     }
 }
