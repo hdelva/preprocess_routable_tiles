@@ -23,6 +23,7 @@ use crate::io::get_tile_path;
 use crate::io::profile::load_car_profile;
 use crate::io::profile::load_pedestrian_profile;
 use crate::io::tiles::write_derived_tile;
+use crate::io::tiles::write_derived_tile_wkt_tree;
 use crate::util::get_tile_coords;
 use indicatif::{ProgressBar, ProgressStyle};
 use rayon::prelude::*;
@@ -137,6 +138,19 @@ fn main() {
                         .required(true)
                         .takes_value(true),
                 ),
+        ).subcommand(
+            SubCommand::with_name("reduce_transit_wkt_tree")
+                .about("Only retain elements that are necessary to traverse a tile, tiles are structured in a tree structure")
+                .arg(
+                    Arg::with_name("profile")
+                        .short("p")
+                        .long("profile")
+                        .value_name("car|bicycle|pedestrian")
+                        .help("Sets the profile to use")
+                        .possible_values(&["car", "bicycle", "pedestrian"])
+                        .required(true)
+                        .takes_value(true),
+                ),
         )
         .subcommand(SubCommand::with_name("reduce_contract").about("Only retain nodes that"))
         .subcommand(
@@ -218,6 +232,36 @@ fn main() {
                 let profile_tile_path = get_tile_path(output_dir, id);
                 let profile_tile = create_transit_tile(&index, id, &profile);
                 write_derived_tile(profile_tile, &profile_tile_path);
+                progress.inc(1);
+            });
+
+            progress.finish();
+        }
+        Some("reduce_transit_adjacent_tiles") => {
+            let profile_name = matches
+                .subcommand_matches("reduce_transit_adjacent_tiles")
+                .expect("Subcommand arguments are missing")
+                .value_of("profile")
+                .unwrap();
+            let profile = match profile_name {
+                "car" => load_car_profile().unwrap(),
+                "pedestrian" => load_pedestrian_profile().unwrap(),
+                "bicycle" => load_bicycle_profile().unwrap(),
+                _ => unreachable!(),
+            };
+
+            let index = load_tiles(input_dir, lats, lons, zoom);
+            let progress = ProgressBar::new(index.len() as u64);
+            progress.set_style(
+                ProgressStyle::default_bar()
+                    .template("Pruning Ways [{elapsed_precise}] {wide_bar:.cyan/blue} {pos:>7}/{len:7} {msg}")
+                    .progress_chars("█▓░"),
+            );
+
+            index.par_iter().for_each(|(id, _)| {
+                let profile_tile_path = get_tile_path(output_dir, id);
+                let profile_tile = create_transit_tile(&index, id, &profile);
+                write_derived_tile_wkt_tree(profile_tile, &profile_tile_path);
                 progress.inc(1);
             });
 
