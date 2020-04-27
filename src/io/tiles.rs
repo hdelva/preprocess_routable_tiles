@@ -412,3 +412,124 @@ pub fn write_derived_tile_wkt_tree(tile: DerivedTile, path: &str) {
 
     fs::write(path, file.to_string()).expect("Unable to write file");
 }
+
+//this function writes transit tiles that are part of the tree structure, but on highest (14) zoomlevel, no children relations are included
+//but a relation to the according routable tile is made
+// TO DO: Specify prov:Derivation relation
+pub fn write_derived_tile_wkt_tree_level_14(tile: DerivedTile, path: &str) {
+    let mut graph: Vec<Value> = tile
+        .get_nodes()
+        .values()
+        .map(|node| {
+            let mut blob = BTreeMap::new();
+            blob.insert("@type".to_owned(), json!("osm:Node"));
+            blob.insert("@id".to_owned(), json!(node.get_id()));
+            blob.insert(
+                "geo:asWKT".to_owned(),
+                json!(format!(
+                    "<http://www.opengis.net/def/crs/OGC/1.3/CRS84> POINT({} {})",
+                    node.get_long(),
+                    node.get_lat()
+                )),
+            );
+
+            if !node.get_undefined_tags().is_empty() {
+                blob.insert("osm:hasTag".to_owned(), json!(node.get_undefined_tags()));
+            }
+
+            for (key, value) in node.get_tags() {
+                blob.insert(key.to_string(), json!(value));
+            }
+
+            json!(blob)
+        })
+        .collect();
+
+    let mut ways: Vec<Value> = tile
+        .get_ways()
+        .values()
+        .map(|way| {
+            let mut blob = BTreeMap::new();
+            blob.insert("@type".to_owned(), json!("osm:Way"));
+            blob.insert("@id".to_owned(), json!(way.get_id()));
+            if let Some(weights) = way.get_distances() {
+                let mut edges = BTreeMap::new();
+                edges.insert("osm:hasNodes".to_owned(), json!(way.get_nodes()));
+                edges.insert("osm:hasWeights".to_owned(), json!(weights));
+                blob.insert("osm:hasEdges".to_owned(), json!(edges));
+            } else {
+                blob.insert("osm:hasNodes".to_owned(), json!(way.get_nodes()));
+            }
+
+            if !way.get_undefined_tags().is_empty() {
+                blob.insert("osm:hasTag".to_owned(), json!(way.get_undefined_tags()));
+            }
+
+            for (key, value) in way.get_tags() {
+                blob.insert(key.to_string(), json!(value));
+            }
+
+            json!(blob)
+        })
+        .collect();
+
+    graph.append(&mut ways);
+    let context = json!({
+    "tiles":"https://w3id.org/tree/terms#",
+    "hydra":"http://www.w3.org/ns/hydra/core#",
+    "osm":"https://w3id.org/openstreetmap/terms#",
+    "rdfs":"http://www.w3.org/2000/01/rdf-schema#",
+    "geo":"http://www.opengis.net/ont/geosparql#",
+    "geo:asWKT":{
+        "@type":"geo:wktLiteral"
+    },
+    "tree": "https://w3id.org/tree#",
+    "dcterms":"http://purl.org/dc/terms/",
+    "dcterms:license":{"@type":"@id"},
+    "hydra:variableRepresentation":{"@type":"@id"},
+    "hydra:property":{"@type":"@id"},
+    "osm:access":{"@type":"@id"},
+    "osm:barrier":{"@type":"@id"},
+    "osm:bicycle":{"@type":"@id"},
+    "osm:construction":{"@type":"@id"},
+    "osm:crossing":{"@type":"@id"},
+    "osm:cycleway":{"@type":"@id"},
+    "osm:footway":{"@type":"@id"},
+    "osm:highway":{"@type":"@id"},
+    "osm:motor_vehicle":{"@type":"@id"},
+    "osm:motorcar":{"@type":"@id"},
+    "osm:oneway_bicycle":{"@type":"@id"},
+    "osm:oneway":{"@type":"@id"},
+    "osm:smoothness":{"@type":"@id"},
+    "osm:surface":{"@type":"@id"},
+    "osm:tracktype":{"@type":"@id"},
+    "osm:vehicle":{"@type":"@id"},
+    "osm:hasNodes":{"@container":"@list","@type":"@id"},
+    "osm:hasMembers":{"@container":"@list","@type":"@id"},
+    "tree:node":{"@type":"@id"},
+    "tree:path":{"@type":"@id"}}
+    );
+
+    let file = json!({
+        "@context": context,
+        "@id":format!("https://example.transitTree.org/root/{}/{}/{}/", tile.get_coordinate().zoom, tile.get_coordinate().x, tile.get_coordinate().y),
+        "tiles:zoom":tile.get_coordinate().zoom,
+        "tiles:longitudeTile":tile.get_coordinate().x,
+        "tiles:latitudeTile":tile.get_coordinate().y,
+        "prov:Derivation": [
+            {
+                "@type": "tree:GeospatiallyContainsRelation",
+                "tree:node": format!("https://tiles.openplanner.team/planet/{}/{}/{}", tile.get_coordinate().zoom, tile.get_coordinate().x, tile.get_coordinate().y),
+            }
+           ],
+        "dcterms:isPartOf":{
+            "@id":"https://example.transitTree.org/root",
+            "@type":"hydra:Collection",
+            "dcterms:license":"http://opendatacommons.org/licenses/odbl/1-0/",
+            "dcterms:rights":"http://www.openstreetmap.org/copyright",
+        },
+        "@graph": graph
+    });
+
+    fs::write(path, file.to_string()).expect("Unable to write file");
+}
