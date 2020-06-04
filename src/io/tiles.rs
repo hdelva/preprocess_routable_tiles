@@ -277,7 +277,7 @@ pub fn write_derived_tile_wkt_tree(tile: DerivedTile, path: &str) {
             blob.insert("@id".to_owned(), json!(node.get_id()));
             //depending on if you want to work with WKT strings or geo:long and geo:lat fields, uncomment what you want
             //the function title says wkt_tree atm
-            blob.insert("geo:asWKT".to_owned(), json!(format!("<http://www.opengis.net/def/crs/OGC/1.3/CRS84> POINT({} {})", node.get_long(), node.get_lat())));
+            blob.insert("geosparql:asWKT".to_owned(), json!(format!("<http://www.opengis.net/def/crs/OGC/1.3/CRS84> POINT({} {})", node.get_long(), node.get_lat())));
             //blob.insert("geo:long".to_owned(), json!(node.get_long()));
             //blob.insert("geo:lat".to_owned(), json!(node.get_lat()));
 
@@ -340,9 +340,10 @@ pub fn write_derived_tile_wkt_tree(tile: DerivedTile, path: &str) {
     "hydra":"http://www.w3.org/ns/hydra/core#",
     "osm":"https://w3id.org/openstreetmap/terms#",
     "rdfs":"http://www.w3.org/2000/01/rdf-schema#",
-    "geo":"http://www.opengis.net/ont/geosparql#",
-    "geo:asWKT":{
-        "@type":"geo:wktLiteral"
+    "geo":"http://www.w3.org/2003/01/geo/wgs84_pos#",
+    "geosparql":"http://www.opengis.net/ont/geosparql#",
+    "geosparql:asWKT":{
+        "@type":"geosparql:wktLiteral"
     },
     "tree": "https://w3id.org/tree#",
     "dcterms":"http://purl.org/dc/terms/",
@@ -373,34 +374,34 @@ pub fn write_derived_tile_wkt_tree(tile: DerivedTile, path: &str) {
 
     let file = json!({
         "@context": context,
-        "@id":format!("http://193.190.127.203/tiles/tree/transit_wkt/{}/{}/{}.json", tile.get_coordinate().zoom, tile.get_coordinate().x, tile.get_coordinate().y),
+        "@id":format!("http://193.190.127.203/tiles/tree/transit_wkt_contracted/{}/{}/{}.json", tile.get_coordinate().zoom, tile.get_coordinate().x, tile.get_coordinate().y),
         "tiles:zoom":tile.get_coordinate().zoom,
         "tiles:longitudeTile":tile.get_coordinate().x,
         "tiles:latitudeTile":tile.get_coordinate().y,
-        "geo:asWKT": format!("<http://www.opengis.net/def/crs/OGC/1.3/CRS84> POLYGON(({} {}, {} {}, {} {}, {} {}, {} {}))", west, north, east, north, east, south, west, south, west, north),
+        "geosparql:asWKT": format!("<http://www.opengis.net/def/crs/OGC/1.3/CRS84> POLYGON(({} {}, {} {}, {} {}, {} {}, {} {}))", west, north, east, north, east, south, west, south, west, north),
         "tree:relation": [
             {
                 "@type": "tree:GeospatiallyContainsRelation",
-                "tree:node": format!("http://193.190.127.203/tiles/tree/transit_wkt/{}/{}/{}.json", tile.get_coordinate().zoom +1, tile.get_coordinate().x*2, tile.get_coordinate().y*2),
-                "tree:path": "geo:asWKT",
+                "tree:node": format!("http://193.190.127.203/tiles/tree/transit_wkt_contracted/{}/{}/{}.json", tile.get_coordinate().zoom +1, tile.get_coordinate().x*2, tile.get_coordinate().y*2),
+                "tree:path": "geosparql:asWKT",
                 "tree:value": format!("<http://www.opengis.net/def/crs/OGC/1.3/CRS84> POLYGON(({} {}, {} {}, {} {}, {} {}, {} {}))", west_upper_left_child, north_upper_left_child, east_upper_left_child, north_upper_left_child, east_upper_left_child, south_upper_left_child, west_upper_left_child, south_upper_left_child, west_upper_left_child, north_upper_left_child)
             },
             {
                 "@type": "tree:GeospatiallyContainsRelation",
-                "tree:node": format!("http://193.190.127.203/tiles/tree/transit_wkt/{}/{}/{}.json", tile.get_coordinate().zoom +1, tile.get_coordinate().x*2 +1, tile.get_coordinate().y*2),
-                "tree:path": "geo:asWKT",
+                "tree:node": format!("http://193.190.127.203/tiles/tree/transit_wkt_contracted/{}/{}/{}.json", tile.get_coordinate().zoom +1, tile.get_coordinate().x*2 +1, tile.get_coordinate().y*2),
+                "tree:path": "geosparql:asWKT",
                 "tree:value": format!("<http://www.opengis.net/def/crs/OGC/1.3/CRS84> POLYGON(({} {}, {} {}, {} {}, {} {}, {} {}))", west_upper_right_child, north_upper_right_child, east_upper_right_child, north_upper_right_child, east_upper_right_child, south_upper_right_child, west_upper_right_child, south_upper_right_child, west_upper_right_child, north_upper_right_child)
             },
             {
                 "@type": "tree:GeospatiallyContainsRelation",
-                "tree:node": format!("http://193.190.127.203/tiles/tree/transit_wkt/{}/{}/{}.json", tile.get_coordinate().zoom +1, tile.get_coordinate().x*2, tile.get_coordinate().y*2 +1),
-                "tree:path": "geo:asWKT",
+                "tree:node": format!("http://193.190.127.203/tiles/tree/transit_wkt_contracted/{}/{}/{}.json", tile.get_coordinate().zoom +1, tile.get_coordinate().x*2, tile.get_coordinate().y*2 +1),
+                "tree:path": "geosparql:asWKT",
                 "tree:value": format!("<http://www.opengis.net/def/crs/OGC/1.3/CRS84> POLYGON(({} {}, {} {}, {} {}, {} {}, {} {}))", west_down_left_child, north_down_left_child, east_down_left_child, north_down_left_child, east_down_left_child, south_down_left_child, west_down_left_child, south_down_left_child, west_down_left_child, north_down_left_child)
             },
             {
                 "@type": "tree:GeospatiallyContainsRelation",
-                "tree:node": format!("http://193.190.127.203/tiles/tree/transit_wkt/{}/{}/{}.json", tile.get_coordinate().zoom +1, tile.get_coordinate().x*2 +1, tile.get_coordinate().y*2 +1),
-                "tree:path": "geo:asWKT",
+                "tree:node": format!("http://193.190.127.203/tiles/tree/transit_wkt_contracted/{}/{}/{}.json", tile.get_coordinate().zoom +1, tile.get_coordinate().x*2 +1, tile.get_coordinate().y*2 +1),
+                "tree:path": "geosparql:asWKT",
                 "tree:value": format!("<http://www.opengis.net/def/crs/OGC/1.3/CRS84> POLYGON(({} {}, {} {}, {} {}, {} {}, {} {}))", west_down_right_child, north_down_right_child, east_down_right_child, north_down_right_child, east_down_right_child, south_down_right_child, west_down_right_child, south_down_right_child, west_down_right_child, north_down_right_child)
             }
            ],
@@ -427,7 +428,7 @@ pub fn write_derived_tile_wkt_tree_level_14(tile: DerivedTile, path: &str) {
             blob.insert("@id".to_owned(), json!(node.get_id()));
             //depending on if WKT strings or geo:long and geo:lat are used for locations, uncomment what you need
             //the function title says wkt_tree atm
-            blob.insert("geo:asWKT".to_owned(), json!(format!("<http://www.opengis.net/def/crs/OGC/1.3/CRS84> POINT({} {})", node.get_long(), node.get_lat())));
+            blob.insert("geosparql:asWKT".to_owned(), json!(format!("<http://www.opengis.net/def/crs/OGC/1.3/CRS84> POINT({} {})", node.get_long(), node.get_lat())));
             // blob.insert("geo:long".to_owned(), json!(node.get_long()));
             // blob.insert("geo:lat".to_owned(), json!(node.get_lat()));
 
@@ -478,8 +479,8 @@ pub fn write_derived_tile_wkt_tree_level_14(tile: DerivedTile, path: &str) {
     "osm":"https://w3id.org/openstreetmap/terms#",
     "rdfs":"http://www.w3.org/2000/01/rdf-schema#",
     "geo":"http://www.opengis.net/ont/geosparql#",
-    "geo:asWKT":{
-        "@type":"geo:wktLiteral"
+    "geosparql:asWKT":{
+        "@type":"geosparql:wktLiteral"
     },
     "tree": "https://w3id.org/tree#",
     "dcterms":"http://purl.org/dc/terms/",
@@ -512,11 +513,11 @@ pub fn write_derived_tile_wkt_tree_level_14(tile: DerivedTile, path: &str) {
 
     let file = json!({
         "@context": context,
-        "@id":format!("http://193.190.127.203/tiles/tree/transit_wkt/{}/{}/{}.json", tile.get_coordinate().zoom, tile.get_coordinate().x, tile.get_coordinate().y),
+        "@id":format!("http://193.190.127.203/tiles/tree/transit_wkt_contracted/{}/{}/{}.json", tile.get_coordinate().zoom, tile.get_coordinate().x, tile.get_coordinate().y),
         "tiles:zoom":tile.get_coordinate().zoom,
         "tiles:longitudeTile":tile.get_coordinate().x,
         "tiles:latitudeTile":tile.get_coordinate().y,
-        "geo:asWKT": format!("<http://www.opengis.net/def/crs/OGC/1.3/CRS84> POLYGON(({} {}, {} {}, {} {}, {} {}, {} {}))", west, north, east, north, east, south, west, south, west, north),
+        "geosparql:asWKT": format!("<http://www.opengis.net/def/crs/OGC/1.3/CRS84> POLYGON(({} {}, {} {}, {} {}, {} {}, {} {}))", west, north, east, north, east, south, west, south, west, north),
         "tree:relation": [],
         "dcterms:isPartOf":{
             "@id":"https://example.transitTree.org/root",
@@ -550,9 +551,10 @@ pub fn write_derived_tile_wkt_tree_metadata_only(tile: DerivedTile, path: &str) 
     "hydra":"http://www.w3.org/ns/hydra/core#",
     "osm":"https://w3id.org/openstreetmap/terms#",
     "rdfs":"http://www.w3.org/2000/01/rdf-schema#",
-    "geo":"http://www.opengis.net/ont/geosparql#",
-    "geo:asWKT":{
-        "@type":"geo:wktLiteral"
+    "geo":"http://www.w3.org/2003/01/geo/wgs84_pos#",
+    "geosparql":"http://www.opengis.net/ont/geosparql#",
+    "geosparql:asWKT":{
+        "@type":"geosparql:wktLiteral"
     },
     "tree": "https://w3id.org/tree#",
     "dcterms":"http://purl.org/dc/terms/",
@@ -583,34 +585,34 @@ pub fn write_derived_tile_wkt_tree_metadata_only(tile: DerivedTile, path: &str) 
 
     let file = json!({
         "@context": context,
-        "@id":format!("http://192.168.56.1:8080/tiles/tree/routable/{}/{}/{}.json", tile.get_coordinate().zoom, tile.get_coordinate().x, tile.get_coordinate().y),
+        "@id":format!("http://193.190.127.203/tiles/tree/routable/{}/{}/{}.json", tile.get_coordinate().zoom, tile.get_coordinate().x, tile.get_coordinate().y),
         "tiles:zoom":tile.get_coordinate().zoom,
         "tiles:longitudeTile":tile.get_coordinate().x,
         "tiles:latitudeTile":tile.get_coordinate().y,
-        "geo:asWKT": format!("<http://www.opengis.net/def/crs/OGC/1.3/CRS84> POLYGON(({} {}, {} {}, {} {}, {} {}, {} {}))", west, north, east, north, east, south, west, south, west, north),
+        "geosparql:asWKT": format!("<http://www.opengis.net/def/crs/OGC/1.3/CRS84> POLYGON(({} {}, {} {}, {} {}, {} {}, {} {}))", west, north, east, north, east, south, west, south, west, north),
         "tree:relation": [
             {
                 "@type": "tree:GeospatiallyContainsRelation",
-                "tree:node": format!("http://192.168.56.1:8080/tiles/tree/routable/{}/{}/{}.json", tile.get_coordinate().zoom +1, tile.get_coordinate().x*2, tile.get_coordinate().y*2),
-                "tree:path": "geo:asWKT",
+                "tree:node": format!("http://193.190.127.203/tiles/tree/routable/{}/{}/{}.json", tile.get_coordinate().zoom +1, tile.get_coordinate().x*2, tile.get_coordinate().y*2),
+                "tree:path": "geosparql:asWKT",
                 "tree:value": format!("<http://www.opengis.net/def/crs/OGC/1.3/CRS84> POLYGON(({} {}, {} {}, {} {}, {} {}, {} {}))", west_upper_left_child, north_upper_left_child, east_upper_left_child, north_upper_left_child, east_upper_left_child, south_upper_left_child, west_upper_left_child, south_upper_left_child, west_upper_left_child, north_upper_left_child)
             },
             {
                 "@type": "tree:GeospatiallyContainsRelation",
-                "tree:node": format!("http://192.168.56.1:8080/tiles/tree/routable/{}/{}/{}.json", tile.get_coordinate().zoom +1, tile.get_coordinate().x*2 +1, tile.get_coordinate().y*2),
-                "tree:path": "geo:asWKT",
+                "tree:node": format!("http://193.190.127.203/tiles/tree/routable/{}/{}/{}.json", tile.get_coordinate().zoom +1, tile.get_coordinate().x*2 +1, tile.get_coordinate().y*2),
+                "tree:path": "geosparql:asWKT",
                 "tree:value": format!("<http://www.opengis.net/def/crs/OGC/1.3/CRS84> POLYGON(({} {}, {} {}, {} {}, {} {}, {} {}))", west_upper_right_child, north_upper_right_child, east_upper_right_child, north_upper_right_child, east_upper_right_child, south_upper_right_child, west_upper_right_child, south_upper_right_child, west_upper_right_child, north_upper_right_child)
             },
             {
                 "@type": "tree:GeospatiallyContainsRelation",
-                "tree:node": format!("http://192.168.56.1:8080/tiles/tree/routable/{}/{}/{}.json", tile.get_coordinate().zoom +1, tile.get_coordinate().x*2, tile.get_coordinate().y*2 +1),
-                "tree:path": "geo:asWKT",
+                "tree:node": format!("http://193.190.127.203/tiles/tree/routable/{}/{}/{}.json", tile.get_coordinate().zoom +1, tile.get_coordinate().x*2, tile.get_coordinate().y*2 +1),
+                "tree:path": "geosparql:asWKT",
                 "tree:value": format!("<http://www.opengis.net/def/crs/OGC/1.3/CRS84> POLYGON(({} {}, {} {}, {} {}, {} {}, {} {}))", west_down_left_child, north_down_left_child, east_down_left_child, north_down_left_child, east_down_left_child, south_down_left_child, west_down_left_child, south_down_left_child, west_down_left_child, north_down_left_child)
             },
             {
                 "@type": "tree:GeospatiallyContainsRelation",
-                "tree:node": format!("http://192.168.56.1:8080/tiles/tree/routable/{}/{}/{}.json", tile.get_coordinate().zoom +1, tile.get_coordinate().x*2 +1, tile.get_coordinate().y*2 +1),
-                "tree:path": "geo:asWKT",
+                "tree:node": format!("http://193.190.127.203/tiles/tree/routable/{}/{}/{}.json", tile.get_coordinate().zoom +1, tile.get_coordinate().x*2 +1, tile.get_coordinate().y*2 +1),
+                "tree:path": "geosparql:asWKT",
                 "tree:value": format!("<http://www.opengis.net/def/crs/OGC/1.3/CRS84> POLYGON(({} {}, {} {}, {} {}, {} {}, {} {}))", west_down_right_child, north_down_right_child, east_down_right_child, north_down_right_child, east_down_right_child, south_down_right_child, west_down_right_child, south_down_right_child, west_down_right_child, north_down_right_child)
             }
            ],
@@ -646,9 +648,10 @@ pub fn write_derived_tile_wkt_tree_metadata_only_lvl_13(tile: DerivedTile, path:
     "hydra":"http://www.w3.org/ns/hydra/core#",
     "osm":"https://w3id.org/openstreetmap/terms#",
     "rdfs":"http://www.w3.org/2000/01/rdf-schema#",
-    "geo":"http://www.opengis.net/ont/geosparql#",
-    "geo:asWKT":{
-        "@type":"geo:wktLiteral"
+    "geo":"http://www.w3.org/2003/01/geo/wgs84_pos#",
+    "geosparql":"http://www.opengis.net/ont/geosparql#",
+    "geosparql:asWKT":{
+        "@type":"geosparql:wktLiteral"
     },
     "tree": "https://w3id.org/tree#",
     "dcterms":"http://purl.org/dc/terms/",
@@ -679,34 +682,34 @@ pub fn write_derived_tile_wkt_tree_metadata_only_lvl_13(tile: DerivedTile, path:
 
     let file = json!({
         "@context": context,
-        "@id":format!("http://192.168.56.1:8080/tiles/tree/routable/{}/{}/{}.json", tile.get_coordinate().zoom, tile.get_coordinate().x, tile.get_coordinate().y),
+        "@id":format!("http://193.190.127.203/tiles/tree/routable/{}/{}/{}.json", tile.get_coordinate().zoom, tile.get_coordinate().x, tile.get_coordinate().y),
         "tiles:zoom":tile.get_coordinate().zoom,
         "tiles:longitudeTile":tile.get_coordinate().x,
         "tiles:latitudeTile":tile.get_coordinate().y,
-        "geo:asWKT": format!("<http://www.opengis.net/def/crs/OGC/1.3/CRS84> POLYGON(({} {}, {} {}, {} {}, {} {}, {} {}))", west, north, east, north, east, south, west, south, west, north),
+        "geosparql:asWKT": format!("<http://www.opengis.net/def/crs/OGC/1.3/CRS84> POLYGON(({} {}, {} {}, {} {}, {} {}, {} {}))", west, north, east, north, east, south, west, south, west, north),
         "tree:relation": [
             {
                 "@type": "tree:GeospatiallyContainsRelation",
                 "tree:node": format!("https://tiles.openplanner.team/planet/{}/{}/{}", tile.get_coordinate().zoom +1, tile.get_coordinate().x*2, tile.get_coordinate().y*2),
-                "tree:path": "geo:asWKT",
+                "tree:path": "geosparql:asWKT",
                 "tree:value": format!("<http://www.opengis.net/def/crs/OGC/1.3/CRS84> POLYGON(({} {}, {} {}, {} {}, {} {}, {} {}))", west_upper_left_child, north_upper_left_child, east_upper_left_child, north_upper_left_child, east_upper_left_child, south_upper_left_child, west_upper_left_child, south_upper_left_child, west_upper_left_child, north_upper_left_child)
             },
             {
                 "@type": "tree:GeospatiallyContainsRelation",
                 "tree:node": format!("https://tiles.openplanner.team/planet/{}/{}/{}", tile.get_coordinate().zoom +1, tile.get_coordinate().x*2 +1, tile.get_coordinate().y*2),
-                "tree:path": "geo:asWKT",
+                "tree:path": "geosparql:asWKT",
                 "tree:value": format!("<http://www.opengis.net/def/crs/OGC/1.3/CRS84> POLYGON(({} {}, {} {}, {} {}, {} {}, {} {}))", west_upper_right_child, north_upper_right_child, east_upper_right_child, north_upper_right_child, east_upper_right_child, south_upper_right_child, west_upper_right_child, south_upper_right_child, west_upper_right_child, north_upper_right_child)
             },
             {
                 "@type": "tree:GeospatiallyContainsRelation",
                 "tree:node": format!("https://tiles.openplanner.team/planet/{}/{}/{}", tile.get_coordinate().zoom +1, tile.get_coordinate().x*2, tile.get_coordinate().y*2 +1),
-                "tree:path": "geo:asWKT",
+                "tree:path": "geosparql:asWKT",
                 "tree:value": format!("<http://www.opengis.net/def/crs/OGC/1.3/CRS84> POLYGON(({} {}, {} {}, {} {}, {} {}, {} {}))", west_down_left_child, north_down_left_child, east_down_left_child, north_down_left_child, east_down_left_child, south_down_left_child, west_down_left_child, south_down_left_child, west_down_left_child, north_down_left_child)
             },
             {
                 "@type": "tree:GeospatiallyContainsRelation",
                 "tree:node": format!("https://tiles.openplanner.team/planet/{}/{}/{}", tile.get_coordinate().zoom +1, tile.get_coordinate().x*2 +1, tile.get_coordinate().y*2 +1),
-                "tree:path": "geo:asWKT",
+                "tree:path": "geosparql:asWKT",
                 "tree:value": format!("<http://www.opengis.net/def/crs/OGC/1.3/CRS84> POLYGON(({} {}, {} {}, {} {}, {} {}, {} {}))", west_down_right_child, north_down_right_child, east_down_right_child, north_down_right_child, east_down_right_child, south_down_right_child, west_down_right_child, south_down_right_child, west_down_right_child, north_down_right_child)
             }
            ],
