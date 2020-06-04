@@ -1,12 +1,13 @@
 use serde_json::{json, Value};
+use std::collections::BTreeMap;
 use std::fs::File;
 use std::io::Read;
-use std::collections::BTreeMap;
 
 use crate::entities::node::Node;
-use crate::entities::tile::{Tile, DerivedTile};
-use crate::entities::way::Way;
+use crate::entities::tile::{DerivedTile, Tile};
 use crate::entities::tile_coord::TileCoordinate;
+use crate::entities::way::Way;
+use crate::util::get_tile_edges;
 use std::fs;
 
 #[derive(Debug)]
@@ -50,8 +51,7 @@ pub fn load_tile(coordinate: TileCoordinate, path: &str) -> Result<Tile, Error> 
                 Ok(node) => nodes.insert(node.get_id().to_string(), node),
                 _ => None,
             };
-        }
-        else if entity["@type"].as_str().unwrap() == "osm:Way" {
+        } else if entity["@type"].as_str().unwrap() == "osm:Way" {
             match create_way(entity) {
                 Ok(way) => ways.insert(way.get_id().to_string(), way),
                 _ => None,
@@ -65,7 +65,7 @@ pub fn load_tile(coordinate: TileCoordinate, path: &str) -> Result<Tile, Error> 
 fn create_node(entity: &Value) -> Result<Node, Error> {
     let id = match entity["@id"].as_str() {
         Some(id) => id.to_owned(),
-        _ =>  return Err(Error::MissingID),
+        _ => return Err(Error::MissingID),
     };
 
     let lat = match entity["geo:lat"].as_f64() {
@@ -93,7 +93,9 @@ fn create_node(entity: &Value) -> Result<Node, Error> {
 
     let mut undefined_tags = Vec::new();
     if let Some(values) = entity.get("osm:hasTag") {
-        undefined_tags = values.as_array().unwrap()
+        undefined_tags = values
+            .as_array()
+            .unwrap()
             .iter()
             .map(|value| value.as_str().unwrap().to_owned())
             .collect();
@@ -105,13 +107,14 @@ fn create_node(entity: &Value) -> Result<Node, Error> {
 fn create_way(entity: &Value) -> Result<Way, Error> {
     let id = match entity["@id"].as_str() {
         Some(id) => id.to_owned(),
-        _ =>  return Err(Error::MissingID),
+        _ => return Err(Error::MissingID),
     };
 
     let nodes: Vec<String> = match entity["osm:hasNodes"].as_array() {
-        Some(nodes) => {
-            nodes.iter().map(|id| id.as_str().unwrap().to_string()).collect()
-        },
+        Some(nodes) => nodes
+            .iter()
+            .map(|id| id.as_str().unwrap().to_string())
+            .collect(),
         _ => return Err(Error::MissingNodes),
     };
 
@@ -130,7 +133,9 @@ fn create_way(entity: &Value) -> Result<Way, Error> {
 
     let mut undefined_tags = Vec::new();
     if let Some(values) = entity.get("osm:hasTag") {
-        undefined_tags = values.as_array().unwrap()
+        undefined_tags = values
+            .as_array()
+            .unwrap()
             .iter()
             .map(|value| value.as_str().unwrap().to_owned())
             .collect();
@@ -146,78 +151,86 @@ fn create_way(entity: &Value) -> Result<Way, Error> {
 }
 
 pub fn write_derived_tile(tile: DerivedTile, path: &str) {
-    let mut graph: Vec<Value> = tile.get_nodes().values().map(|node| {
-        let mut blob = BTreeMap::new();
-        blob.insert("@type".to_owned(), json!("osm:Node"));
-        blob.insert("@id".to_owned(), json!(node.get_id()));
-        blob.insert("geo:long".to_owned(), json!(node.get_long()));
-        blob.insert("geo:lat".to_owned(), json!(node.get_lat()));
+    let mut graph: Vec<Value> = tile
+        .get_nodes()
+        .values()
+        .map(|node| {
+            let mut blob = BTreeMap::new();
+            blob.insert("@type".to_owned(), json!("osm:Node"));
+            blob.insert("@id".to_owned(), json!(node.get_id()));
+            blob.insert("geo:long".to_owned(), json!(node.get_long()));
+            blob.insert("geo:lat".to_owned(), json!(node.get_lat()));
 
-        if !node.get_undefined_tags().is_empty() {
-            blob.insert("osm:hasTag".to_owned(), json!(node.get_undefined_tags()));
-        }
+            if !node.get_undefined_tags().is_empty() {
+                blob.insert("osm:hasTag".to_owned(), json!(node.get_undefined_tags()));
+            }
 
-        for (key, value) in node.get_tags() {
-            blob.insert(key.to_string(), json!(value));
-        }
+            for (key, value) in node.get_tags() {
+                blob.insert(key.to_string(), json!(value));
+            }
 
-        json!(blob)
-    }).collect();
+            json!(blob)
+        })
+        .collect();
 
-    let mut ways: Vec<Value> = tile.get_ways().values().map(|way| {
-        let mut blob = BTreeMap::new();
-        blob.insert("@type".to_owned(), json!("osm:Way"));
-        blob.insert("@id".to_owned(), json!(way.get_id()));
-        if let Some(weights) = way.get_distances() {
-            let mut edges = BTreeMap::new();
-            edges.insert("osm:hasNodes".to_owned(), json!(way.get_nodes()));
-            edges.insert("osm:hasWeights".to_owned(), json!(weights));
-            blob.insert("osm:hasEdges".to_owned(), json!(edges));
-        } else {
-            blob.insert("osm:hasNodes".to_owned(), json!(way.get_nodes()));
-        }
+    let mut ways: Vec<Value> = tile
+        .get_ways()
+        .values()
+        .map(|way| {
+            let mut blob = BTreeMap::new();
+            blob.insert("@type".to_owned(), json!("osm:Way"));
+            blob.insert("@id".to_owned(), json!(way.get_id()));
+            if let Some(weights) = way.get_distances() {
+                let mut edges = BTreeMap::new();
+                edges.insert("osm:hasNodes".to_owned(), json!(way.get_nodes()));
+                edges.insert("osm:hasWeights".to_owned(), json!(weights));
+                blob.insert("osm:hasEdges".to_owned(), json!(edges));
+            } else {
+                blob.insert("osm:hasNodes".to_owned(), json!(way.get_nodes()));
+            }
 
-        if !way.get_undefined_tags().is_empty() {
-            blob.insert("osm:hasTag".to_owned(), json!(way.get_undefined_tags()));
-        }
+            if !way.get_undefined_tags().is_empty() {
+                blob.insert("osm:hasTag".to_owned(), json!(way.get_undefined_tags()));
+            }
 
-        for (key, value) in way.get_tags() {
-            blob.insert(key.to_string(), json!(value));
-        }
+            for (key, value) in way.get_tags() {
+                blob.insert(key.to_string(), json!(value));
+            }
 
-        json!(blob)
-    }).collect();
+            json!(blob)
+        })
+        .collect();
 
     graph.append(&mut ways);
     let context = json!({
-            "tiles":"https://w3id.org/tree/terms#",
-            "hydra":"http://www.w3.org/ns/hydra/core#",
-            "osm":"https://w3id.org/openstreetmap/terms#",
-            "rdfs":"http://www.w3.org/2000/01/rdf-schema#",
-            "geo":"http://www.w3.org/2003/01/geo/wgs84_pos#",
-            "dcterms":"http://purl.org/dc/terms/",
-            "dcterms:license":{"@type":"@id"},
-            "hydra:variableRepresentation":{"@type":"@id"},
-            "hydra:property":{"@type":"@id"},
-            "osm:access":{"@type":"@id"},
-            "osm:barrier":{"@type":"@id"},
-            "osm:bicycle":{"@type":"@id"},
-            "osm:construction":{"@type":"@id"},
-            "osm:crossing":{"@type":"@id"},
-            "osm:cycleway":{"@type":"@id"},
-            "osm:footway":{"@type":"@id"},
-            "osm:highway":{"@type":"@id"},
-            "osm:motor_vehicle":{"@type":"@id"},
-            "osm:motorcar":{"@type":"@id"},
-            "osm:oneway_bicycle":{"@type":"@id"},
-            "osm:oneway":{"@type":"@id"},
-            "osm:smoothness":{"@type":"@id"},
-            "osm:surface":{"@type":"@id"},
-            "osm:tracktype":{"@type":"@id"},
-            "osm:vehicle":{"@type":"@id"},
-            "osm:hasNodes":{"@container":"@list","@type":"@id"},
-            "osm:hasMembers":{"@container":"@list","@type":"@id"}}
-            );
+    "tiles":"https://w3id.org/tree/terms#",
+    "hydra":"http://www.w3.org/ns/hydra/core#",
+    "osm":"https://w3id.org/openstreetmap/terms#",
+    "rdfs":"http://www.w3.org/2000/01/rdf-schema#",
+    "geo":"http://www.w3.org/2003/01/geo/wgs84_pos#",
+    "dcterms":"http://purl.org/dc/terms/",
+    "dcterms:license":{"@type":"@id"},
+    "hydra:variableRepresentation":{"@type":"@id"},
+    "hydra:property":{"@type":"@id"},
+    "osm:access":{"@type":"@id"},
+    "osm:barrier":{"@type":"@id"},
+    "osm:bicycle":{"@type":"@id"},
+    "osm:construction":{"@type":"@id"},
+    "osm:crossing":{"@type":"@id"},
+    "osm:cycleway":{"@type":"@id"},
+    "osm:footway":{"@type":"@id"},
+    "osm:highway":{"@type":"@id"},
+    "osm:motor_vehicle":{"@type":"@id"},
+    "osm:motorcar":{"@type":"@id"},
+    "osm:oneway_bicycle":{"@type":"@id"},
+    "osm:oneway":{"@type":"@id"},
+    "osm:smoothness":{"@type":"@id"},
+    "osm:surface":{"@type":"@id"},
+    "osm:tracktype":{"@type":"@id"},
+    "osm:vehicle":{"@type":"@id"},
+    "osm:hasNodes":{"@container":"@list","@type":"@id"},
+    "osm:hasMembers":{"@container":"@list","@type":"@id"}}
+    );
 
     let file = json!({
         "@context": context,
@@ -248,6 +261,465 @@ pub fn write_derived_tile(tile: DerivedTile, path: &str) {
             }
         },
         "@graph": graph
+    });
+
+    fs::write(path, file.to_string()).expect("Unable to write file");
+}
+
+//this writes transit tiles for level between [8, 14[
+pub fn write_derived_tile_wkt_tree(tile: DerivedTile, path: &str) {
+    let mut graph: Vec<Value> = tile
+        .get_nodes()
+        .values()
+        .map(|node| {
+            let mut blob = BTreeMap::new();
+            blob.insert("@type".to_owned(), json!("osm:Node"));
+            blob.insert("@id".to_owned(), json!(node.get_id()));
+            //depending on if you want to work with WKT strings or geo:long and geo:lat fields, uncomment what you want
+            //the function title says wkt_tree atm
+            blob.insert("geosparql:asWKT".to_owned(), json!(format!("<http://www.opengis.net/def/crs/OGC/1.3/CRS84> POINT({} {})", node.get_long(), node.get_lat())));
+            //blob.insert("geo:long".to_owned(), json!(node.get_long()));
+            //blob.insert("geo:lat".to_owned(), json!(node.get_lat()));
+
+            if !node.get_undefined_tags().is_empty() {
+                blob.insert("osm:hasTag".to_owned(), json!(node.get_undefined_tags()));
+            }
+
+            for (key, value) in node.get_tags() {
+                blob.insert(key.to_string(), json!(value));
+            }
+
+            json!(blob)
+        })
+        .collect();
+
+    let mut ways: Vec<Value> = tile
+        .get_ways()
+        .values()
+        .map(|way| {
+            let mut blob = BTreeMap::new();
+            blob.insert("@type".to_owned(), json!("osm:Way"));
+            blob.insert("@id".to_owned(), json!(way.get_id()));
+            if let Some(weights) = way.get_distances() {
+                let mut edges = BTreeMap::new();
+                edges.insert("osm:hasNodes".to_owned(), json!(way.get_nodes()));
+                edges.insert("osm:hasWeights".to_owned(), json!(weights));
+                blob.insert("osm:hasEdges".to_owned(), json!(edges));
+            } else {
+                blob.insert("osm:hasNodes".to_owned(), json!(way.get_nodes()));
+            }
+
+            if !way.get_undefined_tags().is_empty() {
+                blob.insert("osm:hasTag".to_owned(), json!(way.get_undefined_tags()));
+            }
+
+            for (key, value) in way.get_tags() {
+                blob.insert(key.to_string(), json!(value));
+            }
+
+            json!(blob)
+        })
+        .collect();
+
+    let [east, north, west, south] = get_tile_edges(&tile.get_coordinate());
+    let [upper_left_child, upper_right_child, down_left_child, down_right_child] =
+        &tile.get_coordinate().get_children();
+
+    let [east_upper_left_child, north_upper_left_child, west_upper_left_child, south_upper_left_child] =
+        get_tile_edges(&upper_left_child);
+    let [east_upper_right_child, north_upper_right_child, west_upper_right_child, south_upper_right_child] =
+        get_tile_edges(&upper_right_child);
+    let [east_down_left_child, north_down_left_child, west_down_left_child, south_down_left_child] =
+        get_tile_edges(&down_left_child);
+    let [east_down_right_child, north_down_right_child, west_down_right_child, south_down_right_child] =
+        get_tile_edges(&down_right_child);
+
+    graph.append(&mut ways);
+    let context = json!({
+    "tiles":"https://w3id.org/tree/terms#",
+    "hydra":"http://www.w3.org/ns/hydra/core#",
+    "osm":"https://w3id.org/openstreetmap/terms#",
+    "rdfs":"http://www.w3.org/2000/01/rdf-schema#",
+    "geo":"http://www.w3.org/2003/01/geo/wgs84_pos#",
+    "geosparql":"http://www.opengis.net/ont/geosparql#",
+    "geosparql:asWKT":{
+        "@type":"geosparql:wktLiteral"
+    },
+    "tree": "https://w3id.org/tree#",
+    "dcterms":"http://purl.org/dc/terms/",
+    "dcterms:license":{"@type":"@id"},
+    "hydra:variableRepresentation":{"@type":"@id"},
+    "hydra:property":{"@type":"@id"},
+    "osm:access":{"@type":"@id"},
+    "osm:barrier":{"@type":"@id"},
+    "osm:bicycle":{"@type":"@id"},
+    "osm:construction":{"@type":"@id"},
+    "osm:crossing":{"@type":"@id"},
+    "osm:cycleway":{"@type":"@id"},
+    "osm:footway":{"@type":"@id"},
+    "osm:highway":{"@type":"@id"},
+    "osm:motor_vehicle":{"@type":"@id"},
+    "osm:motorcar":{"@type":"@id"},
+    "osm:oneway_bicycle":{"@type":"@id"},
+    "osm:oneway":{"@type":"@id"},
+    "osm:smoothness":{"@type":"@id"},
+    "osm:surface":{"@type":"@id"},
+    "osm:tracktype":{"@type":"@id"},
+    "osm:vehicle":{"@type":"@id"},
+    "osm:hasNodes":{"@container":"@list","@type":"@id"},
+    "osm:hasMembers":{"@container":"@list","@type":"@id"},
+    "tree:node":{"@type":"@id"},
+    "tree:path":{"@type":"@id"}}
+    );
+
+    let file = json!({
+        "@context": context,
+        "@id":format!("http://193.190.127.203/tiles/tree/transit_wkt_contracted/{}/{}/{}.json", tile.get_coordinate().zoom, tile.get_coordinate().x, tile.get_coordinate().y),
+        "tiles:zoom":tile.get_coordinate().zoom,
+        "tiles:longitudeTile":tile.get_coordinate().x,
+        "tiles:latitudeTile":tile.get_coordinate().y,
+        "geosparql:asWKT": format!("<http://www.opengis.net/def/crs/OGC/1.3/CRS84> POLYGON(({} {}, {} {}, {} {}, {} {}, {} {}))", west, north, east, north, east, south, west, south, west, north),
+        "tree:relation": [
+            {
+                "@type": "tree:GeospatiallyContainsRelation",
+                "tree:node": format!("http://193.190.127.203/tiles/tree/transit_wkt_contracted/{}/{}/{}.json", tile.get_coordinate().zoom +1, tile.get_coordinate().x*2, tile.get_coordinate().y*2),
+                "tree:path": "geosparql:asWKT",
+                "tree:value": format!("<http://www.opengis.net/def/crs/OGC/1.3/CRS84> POLYGON(({} {}, {} {}, {} {}, {} {}, {} {}))", west_upper_left_child, north_upper_left_child, east_upper_left_child, north_upper_left_child, east_upper_left_child, south_upper_left_child, west_upper_left_child, south_upper_left_child, west_upper_left_child, north_upper_left_child)
+            },
+            {
+                "@type": "tree:GeospatiallyContainsRelation",
+                "tree:node": format!("http://193.190.127.203/tiles/tree/transit_wkt_contracted/{}/{}/{}.json", tile.get_coordinate().zoom +1, tile.get_coordinate().x*2 +1, tile.get_coordinate().y*2),
+                "tree:path": "geosparql:asWKT",
+                "tree:value": format!("<http://www.opengis.net/def/crs/OGC/1.3/CRS84> POLYGON(({} {}, {} {}, {} {}, {} {}, {} {}))", west_upper_right_child, north_upper_right_child, east_upper_right_child, north_upper_right_child, east_upper_right_child, south_upper_right_child, west_upper_right_child, south_upper_right_child, west_upper_right_child, north_upper_right_child)
+            },
+            {
+                "@type": "tree:GeospatiallyContainsRelation",
+                "tree:node": format!("http://193.190.127.203/tiles/tree/transit_wkt_contracted/{}/{}/{}.json", tile.get_coordinate().zoom +1, tile.get_coordinate().x*2, tile.get_coordinate().y*2 +1),
+                "tree:path": "geosparql:asWKT",
+                "tree:value": format!("<http://www.opengis.net/def/crs/OGC/1.3/CRS84> POLYGON(({} {}, {} {}, {} {}, {} {}, {} {}))", west_down_left_child, north_down_left_child, east_down_left_child, north_down_left_child, east_down_left_child, south_down_left_child, west_down_left_child, south_down_left_child, west_down_left_child, north_down_left_child)
+            },
+            {
+                "@type": "tree:GeospatiallyContainsRelation",
+                "tree:node": format!("http://193.190.127.203/tiles/tree/transit_wkt_contracted/{}/{}/{}.json", tile.get_coordinate().zoom +1, tile.get_coordinate().x*2 +1, tile.get_coordinate().y*2 +1),
+                "tree:path": "geosparql:asWKT",
+                "tree:value": format!("<http://www.opengis.net/def/crs/OGC/1.3/CRS84> POLYGON(({} {}, {} {}, {} {}, {} {}, {} {}))", west_down_right_child, north_down_right_child, east_down_right_child, north_down_right_child, east_down_right_child, south_down_right_child, west_down_right_child, south_down_right_child, west_down_right_child, north_down_right_child)
+            }
+           ],
+        "dcterms:isPartOf":{
+            "@id":"https://example.transitTree.org/root",
+            "@type":"hydra:Collection",
+            "dcterms:license":"http://opendatacommons.org/licenses/odbl/1-0/",
+            "dcterms:rights":"http://www.openstreetmap.org/copyright",
+        },
+        "@graph": graph
+    });
+
+    fs::write(path, file.to_string()).expect("Unable to write file");
+}
+
+//this function writes transit tiles that are part of the tree structure, but on highest (14) zoomlevel, no children relations are included
+pub fn write_derived_tile_wkt_tree_level_14(tile: DerivedTile, path: &str) {
+    let mut graph: Vec<Value> = tile
+        .get_nodes()
+        .values()
+        .map(|node| {
+            let mut blob = BTreeMap::new();
+            blob.insert("@type".to_owned(), json!("osm:Node"));
+            blob.insert("@id".to_owned(), json!(node.get_id()));
+            //depending on if WKT strings or geo:long and geo:lat are used for locations, uncomment what you need
+            //the function title says wkt_tree atm
+            blob.insert("geosparql:asWKT".to_owned(), json!(format!("<http://www.opengis.net/def/crs/OGC/1.3/CRS84> POINT({} {})", node.get_long(), node.get_lat())));
+            // blob.insert("geo:long".to_owned(), json!(node.get_long()));
+            // blob.insert("geo:lat".to_owned(), json!(node.get_lat()));
+
+            if !node.get_undefined_tags().is_empty() {
+                blob.insert("osm:hasTag".to_owned(), json!(node.get_undefined_tags()));
+            }
+
+            for (key, value) in node.get_tags() {
+                blob.insert(key.to_string(), json!(value));
+            }
+
+            json!(blob)
+        })
+        .collect();
+
+    let mut ways: Vec<Value> = tile
+        .get_ways()
+        .values()
+        .map(|way| {
+            let mut blob = BTreeMap::new();
+            blob.insert("@type".to_owned(), json!("osm:Way"));
+            blob.insert("@id".to_owned(), json!(way.get_id()));
+            if let Some(weights) = way.get_distances() {
+                let mut edges = BTreeMap::new();
+                edges.insert("osm:hasNodes".to_owned(), json!(way.get_nodes()));
+                edges.insert("osm:hasWeights".to_owned(), json!(weights));
+                blob.insert("osm:hasEdges".to_owned(), json!(edges));
+            } else {
+                blob.insert("osm:hasNodes".to_owned(), json!(way.get_nodes()));
+            }
+
+            if !way.get_undefined_tags().is_empty() {
+                blob.insert("osm:hasTag".to_owned(), json!(way.get_undefined_tags()));
+            }
+
+            for (key, value) in way.get_tags() {
+                blob.insert(key.to_string(), json!(value));
+            }
+
+            json!(blob)
+        })
+        .collect();
+
+    graph.append(&mut ways);
+    let context = json!({
+    "tiles":"https://w3id.org/tree/terms#",
+    "hydra":"http://www.w3.org/ns/hydra/core#",
+    "osm":"https://w3id.org/openstreetmap/terms#",
+    "rdfs":"http://www.w3.org/2000/01/rdf-schema#",
+    "geo":"http://www.opengis.net/ont/geosparql#",
+    "geosparql:asWKT":{
+        "@type":"geosparql:wktLiteral"
+    },
+    "tree": "https://w3id.org/tree#",
+    "dcterms":"http://purl.org/dc/terms/",
+    "dcterms:license":{"@type":"@id"},
+    "hydra:variableRepresentation":{"@type":"@id"},
+    "hydra:property":{"@type":"@id"},
+    "osm:access":{"@type":"@id"},
+    "osm:barrier":{"@type":"@id"},
+    "osm:bicycle":{"@type":"@id"},
+    "osm:construction":{"@type":"@id"},
+    "osm:crossing":{"@type":"@id"},
+    "osm:cycleway":{"@type":"@id"},
+    "osm:footway":{"@type":"@id"},
+    "osm:highway":{"@type":"@id"},
+    "osm:motor_vehicle":{"@type":"@id"},
+    "osm:motorcar":{"@type":"@id"},
+    "osm:oneway_bicycle":{"@type":"@id"},
+    "osm:oneway":{"@type":"@id"},
+    "osm:smoothness":{"@type":"@id"},
+    "osm:surface":{"@type":"@id"},
+    "osm:tracktype":{"@type":"@id"},
+    "osm:vehicle":{"@type":"@id"},
+    "osm:hasNodes":{"@container":"@list","@type":"@id"},
+    "osm:hasMembers":{"@container":"@list","@type":"@id"},
+    "tree:node":{"@type":"@id"},
+    "tree:path":{"@type":"@id"}}
+    );
+
+    let [east, north, west, south] = get_tile_edges(&tile.get_coordinate());
+
+    let file = json!({
+        "@context": context,
+        "@id":format!("http://193.190.127.203/tiles/tree/transit_wkt_contracted/{}/{}/{}.json", tile.get_coordinate().zoom, tile.get_coordinate().x, tile.get_coordinate().y),
+        "tiles:zoom":tile.get_coordinate().zoom,
+        "tiles:longitudeTile":tile.get_coordinate().x,
+        "tiles:latitudeTile":tile.get_coordinate().y,
+        "geosparql:asWKT": format!("<http://www.opengis.net/def/crs/OGC/1.3/CRS84> POLYGON(({} {}, {} {}, {} {}, {} {}, {} {}))", west, north, east, north, east, south, west, south, west, north),
+        "tree:relation": [],
+        "dcterms:isPartOf":{
+            "@id":"https://example.transitTree.org/root",
+            "@type":"hydra:Collection",
+            "dcterms:license":"http://opendatacommons.org/licenses/odbl/1-0/",
+            "dcterms:rights":"http://www.openstreetmap.org/copyright",
+        },
+        "@graph": graph
+    });
+
+    fs::write(path, file.to_string()).expect("Unable to write file");
+}
+
+//this is used for making the metadata routable tree tiles
+pub fn write_derived_tile_wkt_tree_metadata_only(tile: DerivedTile, path: &str) {
+    let [east, north, west, south] = get_tile_edges(&tile.get_coordinate());
+    let [upper_left_child, upper_right_child, down_left_child, down_right_child] =
+        &tile.get_coordinate().get_children();
+
+    let [east_upper_left_child, north_upper_left_child, west_upper_left_child, south_upper_left_child] =
+        get_tile_edges(&upper_left_child);
+    let [east_upper_right_child, north_upper_right_child, west_upper_right_child, south_upper_right_child] =
+        get_tile_edges(&upper_right_child);
+    let [east_down_left_child, north_down_left_child, west_down_left_child, south_down_left_child] =
+        get_tile_edges(&down_left_child);
+    let [east_down_right_child, north_down_right_child, west_down_right_child, south_down_right_child] =
+        get_tile_edges(&down_right_child);
+
+    let context = json!({
+    "tiles":"https://w3id.org/tree/terms#",
+    "hydra":"http://www.w3.org/ns/hydra/core#",
+    "osm":"https://w3id.org/openstreetmap/terms#",
+    "rdfs":"http://www.w3.org/2000/01/rdf-schema#",
+    "geo":"http://www.w3.org/2003/01/geo/wgs84_pos#",
+    "geosparql":"http://www.opengis.net/ont/geosparql#",
+    "geosparql:asWKT":{
+        "@type":"geosparql:wktLiteral"
+    },
+    "tree": "https://w3id.org/tree#",
+    "dcterms":"http://purl.org/dc/terms/",
+    "dcterms:license":{"@type":"@id"},
+    "hydra:variableRepresentation":{"@type":"@id"},
+    "hydra:property":{"@type":"@id"},
+    "osm:access":{"@type":"@id"},
+    "osm:barrier":{"@type":"@id"},
+    "osm:bicycle":{"@type":"@id"},
+    "osm:construction":{"@type":"@id"},
+    "osm:crossing":{"@type":"@id"},
+    "osm:cycleway":{"@type":"@id"},
+    "osm:footway":{"@type":"@id"},
+    "osm:highway":{"@type":"@id"},
+    "osm:motor_vehicle":{"@type":"@id"},
+    "osm:motorcar":{"@type":"@id"},
+    "osm:oneway_bicycle":{"@type":"@id"},
+    "osm:oneway":{"@type":"@id"},
+    "osm:smoothness":{"@type":"@id"},
+    "osm:surface":{"@type":"@id"},
+    "osm:tracktype":{"@type":"@id"},
+    "osm:vehicle":{"@type":"@id"},
+    "osm:hasNodes":{"@container":"@list","@type":"@id"},
+    "osm:hasMembers":{"@container":"@list","@type":"@id"},
+    "tree:node":{"@type":"@id"},
+    "tree:path":{"@type":"@id"}}
+    );
+
+    let file = json!({
+        "@context": context,
+        "@id":format!("http://193.190.127.203/tiles/tree/routable/{}/{}/{}.json", tile.get_coordinate().zoom, tile.get_coordinate().x, tile.get_coordinate().y),
+        "tiles:zoom":tile.get_coordinate().zoom,
+        "tiles:longitudeTile":tile.get_coordinate().x,
+        "tiles:latitudeTile":tile.get_coordinate().y,
+        "geosparql:asWKT": format!("<http://www.opengis.net/def/crs/OGC/1.3/CRS84> POLYGON(({} {}, {} {}, {} {}, {} {}, {} {}))", west, north, east, north, east, south, west, south, west, north),
+        "tree:relation": [
+            {
+                "@type": "tree:GeospatiallyContainsRelation",
+                "tree:node": format!("http://193.190.127.203/tiles/tree/routable/{}/{}/{}.json", tile.get_coordinate().zoom +1, tile.get_coordinate().x*2, tile.get_coordinate().y*2),
+                "tree:path": "geosparql:asWKT",
+                "tree:value": format!("<http://www.opengis.net/def/crs/OGC/1.3/CRS84> POLYGON(({} {}, {} {}, {} {}, {} {}, {} {}))", west_upper_left_child, north_upper_left_child, east_upper_left_child, north_upper_left_child, east_upper_left_child, south_upper_left_child, west_upper_left_child, south_upper_left_child, west_upper_left_child, north_upper_left_child)
+            },
+            {
+                "@type": "tree:GeospatiallyContainsRelation",
+                "tree:node": format!("http://193.190.127.203/tiles/tree/routable/{}/{}/{}.json", tile.get_coordinate().zoom +1, tile.get_coordinate().x*2 +1, tile.get_coordinate().y*2),
+                "tree:path": "geosparql:asWKT",
+                "tree:value": format!("<http://www.opengis.net/def/crs/OGC/1.3/CRS84> POLYGON(({} {}, {} {}, {} {}, {} {}, {} {}))", west_upper_right_child, north_upper_right_child, east_upper_right_child, north_upper_right_child, east_upper_right_child, south_upper_right_child, west_upper_right_child, south_upper_right_child, west_upper_right_child, north_upper_right_child)
+            },
+            {
+                "@type": "tree:GeospatiallyContainsRelation",
+                "tree:node": format!("http://193.190.127.203/tiles/tree/routable/{}/{}/{}.json", tile.get_coordinate().zoom +1, tile.get_coordinate().x*2, tile.get_coordinate().y*2 +1),
+                "tree:path": "geosparql:asWKT",
+                "tree:value": format!("<http://www.opengis.net/def/crs/OGC/1.3/CRS84> POLYGON(({} {}, {} {}, {} {}, {} {}, {} {}))", west_down_left_child, north_down_left_child, east_down_left_child, north_down_left_child, east_down_left_child, south_down_left_child, west_down_left_child, south_down_left_child, west_down_left_child, north_down_left_child)
+            },
+            {
+                "@type": "tree:GeospatiallyContainsRelation",
+                "tree:node": format!("http://193.190.127.203/tiles/tree/routable/{}/{}/{}.json", tile.get_coordinate().zoom +1, tile.get_coordinate().x*2 +1, tile.get_coordinate().y*2 +1),
+                "tree:path": "geosparql:asWKT",
+                "tree:value": format!("<http://www.opengis.net/def/crs/OGC/1.3/CRS84> POLYGON(({} {}, {} {}, {} {}, {} {}, {} {}))", west_down_right_child, north_down_right_child, east_down_right_child, north_down_right_child, east_down_right_child, south_down_right_child, west_down_right_child, south_down_right_child, west_down_right_child, north_down_right_child)
+            }
+           ],
+        "dcterms:isPartOf":{
+            "@id":"https://example.routableTree.org/root",
+            "@type":"hydra:Collection",
+            "dcterms:license":"http://opendatacommons.org/licenses/odbl/1-0/",
+            "dcterms:rights":"http://www.openstreetmap.org/copyright",
+        },
+        "@graph": {}
+    });
+
+    fs::write(path, file.to_string()).expect("Unable to write file");
+}
+
+//this function creates metadata only routable tiles for level 13, they point to the original routable tiles of level 14
+pub fn write_derived_tile_wkt_tree_metadata_only_lvl_13(tile: DerivedTile, path: &str) {
+    let [east, north, west, south] = get_tile_edges(&tile.get_coordinate());
+    let [upper_left_child, upper_right_child, down_left_child, down_right_child] =
+        &tile.get_coordinate().get_children();
+
+    let [east_upper_left_child, north_upper_left_child, west_upper_left_child, south_upper_left_child] =
+        get_tile_edges(&upper_left_child);
+    let [east_upper_right_child, north_upper_right_child, west_upper_right_child, south_upper_right_child] =
+        get_tile_edges(&upper_right_child);
+    let [east_down_left_child, north_down_left_child, west_down_left_child, south_down_left_child] =
+        get_tile_edges(&down_left_child);
+    let [east_down_right_child, north_down_right_child, west_down_right_child, south_down_right_child] =
+        get_tile_edges(&down_right_child);
+
+    let context = json!({
+    "tiles":"https://w3id.org/tree/terms#",
+    "hydra":"http://www.w3.org/ns/hydra/core#",
+    "osm":"https://w3id.org/openstreetmap/terms#",
+    "rdfs":"http://www.w3.org/2000/01/rdf-schema#",
+    "geo":"http://www.w3.org/2003/01/geo/wgs84_pos#",
+    "geosparql":"http://www.opengis.net/ont/geosparql#",
+    "geosparql:asWKT":{
+        "@type":"geosparql:wktLiteral"
+    },
+    "tree": "https://w3id.org/tree#",
+    "dcterms":"http://purl.org/dc/terms/",
+    "dcterms:license":{"@type":"@id"},
+    "hydra:variableRepresentation":{"@type":"@id"},
+    "hydra:property":{"@type":"@id"},
+    "osm:access":{"@type":"@id"},
+    "osm:barrier":{"@type":"@id"},
+    "osm:bicycle":{"@type":"@id"},
+    "osm:construction":{"@type":"@id"},
+    "osm:crossing":{"@type":"@id"},
+    "osm:cycleway":{"@type":"@id"},
+    "osm:footway":{"@type":"@id"},
+    "osm:highway":{"@type":"@id"},
+    "osm:motor_vehicle":{"@type":"@id"},
+    "osm:motorcar":{"@type":"@id"},
+    "osm:oneway_bicycle":{"@type":"@id"},
+    "osm:oneway":{"@type":"@id"},
+    "osm:smoothness":{"@type":"@id"},
+    "osm:surface":{"@type":"@id"},
+    "osm:tracktype":{"@type":"@id"},
+    "osm:vehicle":{"@type":"@id"},
+    "osm:hasNodes":{"@container":"@list","@type":"@id"},
+    "osm:hasMembers":{"@container":"@list","@type":"@id"},
+    "tree:node":{"@type":"@id"},
+    "tree:path":{"@type":"@id"}}
+    );
+
+    let file = json!({
+        "@context": context,
+        "@id":format!("http://193.190.127.203/tiles/tree/routable/{}/{}/{}.json", tile.get_coordinate().zoom, tile.get_coordinate().x, tile.get_coordinate().y),
+        "tiles:zoom":tile.get_coordinate().zoom,
+        "tiles:longitudeTile":tile.get_coordinate().x,
+        "tiles:latitudeTile":tile.get_coordinate().y,
+        "geosparql:asWKT": format!("<http://www.opengis.net/def/crs/OGC/1.3/CRS84> POLYGON(({} {}, {} {}, {} {}, {} {}, {} {}))", west, north, east, north, east, south, west, south, west, north),
+        "tree:relation": [
+            {
+                "@type": "tree:GeospatiallyContainsRelation",
+                "tree:node": format!("https://tiles.openplanner.team/planet/{}/{}/{}", tile.get_coordinate().zoom +1, tile.get_coordinate().x*2, tile.get_coordinate().y*2),
+                "tree:path": "geosparql:asWKT",
+                "tree:value": format!("<http://www.opengis.net/def/crs/OGC/1.3/CRS84> POLYGON(({} {}, {} {}, {} {}, {} {}, {} {}))", west_upper_left_child, north_upper_left_child, east_upper_left_child, north_upper_left_child, east_upper_left_child, south_upper_left_child, west_upper_left_child, south_upper_left_child, west_upper_left_child, north_upper_left_child)
+            },
+            {
+                "@type": "tree:GeospatiallyContainsRelation",
+                "tree:node": format!("https://tiles.openplanner.team/planet/{}/{}/{}", tile.get_coordinate().zoom +1, tile.get_coordinate().x*2 +1, tile.get_coordinate().y*2),
+                "tree:path": "geosparql:asWKT",
+                "tree:value": format!("<http://www.opengis.net/def/crs/OGC/1.3/CRS84> POLYGON(({} {}, {} {}, {} {}, {} {}, {} {}))", west_upper_right_child, north_upper_right_child, east_upper_right_child, north_upper_right_child, east_upper_right_child, south_upper_right_child, west_upper_right_child, south_upper_right_child, west_upper_right_child, north_upper_right_child)
+            },
+            {
+                "@type": "tree:GeospatiallyContainsRelation",
+                "tree:node": format!("https://tiles.openplanner.team/planet/{}/{}/{}", tile.get_coordinate().zoom +1, tile.get_coordinate().x*2, tile.get_coordinate().y*2 +1),
+                "tree:path": "geosparql:asWKT",
+                "tree:value": format!("<http://www.opengis.net/def/crs/OGC/1.3/CRS84> POLYGON(({} {}, {} {}, {} {}, {} {}, {} {}))", west_down_left_child, north_down_left_child, east_down_left_child, north_down_left_child, east_down_left_child, south_down_left_child, west_down_left_child, south_down_left_child, west_down_left_child, north_down_left_child)
+            },
+            {
+                "@type": "tree:GeospatiallyContainsRelation",
+                "tree:node": format!("https://tiles.openplanner.team/planet/{}/{}/{}", tile.get_coordinate().zoom +1, tile.get_coordinate().x*2 +1, tile.get_coordinate().y*2 +1),
+                "tree:path": "geosparql:asWKT",
+                "tree:value": format!("<http://www.opengis.net/def/crs/OGC/1.3/CRS84> POLYGON(({} {}, {} {}, {} {}, {} {}, {} {}))", west_down_right_child, north_down_right_child, east_down_right_child, north_down_right_child, east_down_right_child, south_down_right_child, west_down_right_child, south_down_right_child, west_down_right_child, north_down_right_child)
+            }
+           ],
+        "dcterms:isPartOf":{
+            "@id":"https://example.routableTree.org/root",
+            "@type":"hydra:Collection",
+            "dcterms:license":"http://opendatacommons.org/licenses/odbl/1-0/",
+            "dcterms:rights":"http://www.openstreetmap.org/copyright",
+        },
+        "@graph": {}
     });
 
     fs::write(path, file.to_string()).expect("Unable to write file");
