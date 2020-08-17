@@ -1,14 +1,15 @@
+use std::collections::BTreeMap;
 use crate::entities::node::Node;
 use crate::entities::profile::Profile;
 use crate::entities::segment::{Segment, WeightedSegment};
 use crate::entities::tile_coord::TileCoordinate;
 use crate::entities::way::Way;
-use std::collections::BTreeMap;
 
+#[derive(Clone)]
 pub struct Tile {
-    nodes: BTreeMap<String, Node>,
-    ways: BTreeMap<String, Way>,
-    coordinate: TileCoordinate,
+    pub nodes: BTreeMap<String, Node>,
+    pub ways: BTreeMap<String, Way>,
+    pub coordinate: TileCoordinate,
 }
 
 impl Tile {
@@ -30,10 +31,6 @@ impl Tile {
 
     pub fn get_ways(&self) -> &BTreeMap<String, Way> {
         &self.ways
-    }
-
-    pub fn get_coordinate(&self) -> &TileCoordinate {
-        &self.coordinate
     }
 
     pub fn get_weighted_segments(&self, profile: &Profile) -> Vec<WeightedSegment> {

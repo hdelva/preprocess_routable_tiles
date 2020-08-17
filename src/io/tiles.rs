@@ -1,15 +1,20 @@
+use crate::entities::weighted_tile::WeightedTile;
+use crate::io::get_tile_path;
 use serde_json::{json, Value};
 use std::fs::File;
 use std::io::Read;
-use std::collections::BTreeMap;
 
 use crate::entities::node::Node;
 use crate::entities::tile::{Tile, DerivedTile};
 use crate::entities::way::Way;
 use crate::entities::tile_coord::TileCoordinate;
-use std::fs;
+use std::{collections::BTreeMap, fs};
 
-#[derive(Debug)]
+use cached::SizedCache;
+use flexbuffers::FlexbufferSerializer;
+use serde::Serialize;
+
+#[derive(Debug, Clone)]
 pub enum Error {
     NotAFile(String),
     InvalidFile(String),
@@ -20,15 +25,16 @@ pub enum Error {
     MissingNodes,
 }
 
-pub fn load_tile(coordinate: TileCoordinate, path: &str) -> Result<Tile, Error> {
-    let mut file = match File::open(path) {
+pub fn load_tile(coordinate: &TileCoordinate, root_dir: &str) -> Result<Tile, Error> {
+    let path = get_tile_path(root_dir, &coordinate);
+    let mut file = match File::open(&path) {
         Ok(file) => file,
-        _ => return Err(Error::NotAFile(path.to_string())),
+        _ => return Err(Error::NotAFile(path)),
     };
 
     let mut data = String::new();
     if file.read_to_string(&mut data).is_err() {
-        return Err(Error::InvalidFile(path.to_string()));
+        return Err(Error::InvalidFile(path));
     }
 
     let v: Value = match serde_json::from_str(&data) {
@@ -59,7 +65,84 @@ pub fn load_tile(coordinate: TileCoordinate, path: &str) -> Result<Tile, Error> 
         }
     }
 
-    Ok(Tile::new(coordinate, nodes, ways))
+    Ok(Tile::new(*coordinate, nodes, ways))
+}
+
+pub fn load_cached_tile(coordinate: &TileCoordinate, root_dir: &str) -> Result<Tile, Error> {
+    match coordinate.zoom {
+        14 => {
+            load_cached_tile_l14(coordinate, root_dir)
+        },
+        13 => {
+            load_cached_tile_l13(coordinate, root_dir)
+        },
+        12 => {
+            load_cached_tile_l12(coordinate, root_dir)
+        },
+        11 => {
+            load_cached_tile_l11(coordinate, root_dir)
+        },
+        10 => {
+            load_cached_tile_l10(coordinate, root_dir)
+        },
+        _ => {
+            load_cached_tile_lx(coordinate, root_dir)
+        }
+    }
+}
+
+cached_key!{
+    L14: SizedCache<String, Result<Tile, Error>> = SizedCache::with_size(400);
+    Key = { format!("{}/{}/{}/{}", root_dir, coordinate.zoom, coordinate.x, coordinate.y) };
+
+    fn load_cached_tile_l14(coordinate: &TileCoordinate, root_dir: &str) -> Result<Tile, Error> = {
+        load_tile(coordinate, root_dir)
+    }
+}
+
+cached_key!{
+    L13: SizedCache<String, Result<Tile, Error>> = SizedCache::with_size(200);
+    Key = { format!("{}/{}/{}/{}", root_dir, coordinate.zoom, coordinate.x, coordinate.y) };
+
+    fn load_cached_tile_l13(coordinate: &TileCoordinate, root_dir: &str) -> Result<Tile, Error> = {
+        load_tile(coordinate, root_dir)
+    }
+}
+
+cached_key!{
+    L12: SizedCache<String, Result<Tile, Error>> = SizedCache::with_size(100);
+    Key = { format!("{}/{}/{}/{}", root_dir, coordinate.zoom, coordinate.x, coordinate.y) };
+
+    fn load_cached_tile_l12(coordinate: &TileCoordinate, root_dir: &str) -> Result<Tile, Error> = {
+        load_tile(coordinate, root_dir)
+    }
+}
+
+cached_key!{
+    L11: SizedCache<String, Result<Tile, Error>> = SizedCache::with_size(50);
+    Key = { format!("{}/{}/{}/{}", root_dir, coordinate.zoom, coordinate.x, coordinate.y) };
+
+    fn load_cached_tile_l11(coordinate: &TileCoordinate, root_dir: &str) -> Result<Tile, Error> = {
+        load_tile(coordinate, root_dir)
+    }
+}
+
+cached_key!{
+    L10: SizedCache<String, Result<Tile, Error>> = SizedCache::with_size(25);
+    Key = { format!("{}/{}/{}/{}", root_dir, coordinate.zoom, coordinate.x, coordinate.y) };
+
+    fn load_cached_tile_l10(coordinate: &TileCoordinate, root_dir: &str) -> Result<Tile, Error> = {
+        load_tile(coordinate, root_dir)
+    }
+}
+
+cached_key!{
+    LX: SizedCache<String, Result<Tile, Error>> = SizedCache::with_size(20);
+    Key = { format!("{}/{}/{}/{}", root_dir, coordinate.zoom, coordinate.x, coordinate.y) };
+
+    fn load_cached_tile_lx(coordinate: &TileCoordinate, root_dir: &str) -> Result<Tile, Error> = {
+        load_tile(coordinate, root_dir)
+    }
 }
 
 fn create_node(entity: &Value) -> Result<Node, Error> {
@@ -123,7 +206,7 @@ fn create_way(entity: &Value) -> Result<Way, Error> {
             } else if value.is_array() {
                 //
             } else {
-                println!("{} {}", key, value);
+                tags.insert(key.to_string(), value.to_string());
             }
         }
     }
@@ -183,6 +266,10 @@ pub fn write_derived_tile(tile: DerivedTile, path: &str) {
 
         for (key, value) in way.get_tags() {
             blob.insert(key.to_string(), json!(value));
+        }
+
+        if let Some(value) = way.get_max_speed() {
+            blob.insert("osm:maxspeed".to_owned(), json!(value));
         }
 
         json!(blob)
@@ -251,4 +338,11 @@ pub fn write_derived_tile(tile: DerivedTile, path: &str) {
     });
 
     fs::write(path, file.to_string()).expect("Unable to write file");
+}
+
+pub fn write_flexbuffers_tile(tile: WeightedTile, path: &str) {
+    let mut s = FlexbufferSerializer::new();
+    tile.serialize(&mut s).unwrap();
+    //let encoded: Vec<u8> = bincode::serialize(&tile).unwrap();
+    fs::write(path, s.view()).expect("Unable to write file");
 }

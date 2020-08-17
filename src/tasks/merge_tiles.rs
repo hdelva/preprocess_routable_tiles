@@ -1,11 +1,10 @@
+use crate::io::tiles::load_cached_tile;
 use crate::entities::node::Node;
 use crate::entities::tile::DerivedTile;
-use crate::entities::tile::Tile;
 use crate::entities::tile_coord::TileCoordinate;
 use crate::entities::way::Way;
 use crate::util::deg2num;
-use std::collections::btree_map::Entry::Occupied;
-use std::collections::btree_map::Entry::Vacant;
+use std::collections::btree_map::Entry::{Occupied, Vacant};
 use std::collections::BTreeMap;
 use std::collections::BTreeSet;
 
@@ -69,21 +68,22 @@ impl WayProxy {
 }
 
 pub fn create_merged_tile<'a>(
-    index: &'a BTreeMap<TileCoordinate, Tile>,
+    root_dir: &str,
     source_coords: &'a [TileCoordinate],
     target_coord: &'a TileCoordinate,
 ) -> DerivedTile {
     let mut way_proxies: BTreeMap<String, WayProxy> = BTreeMap::new();
-    let mut way_examples: BTreeMap<String, &'a Way> = BTreeMap::new();
+    let mut way_examples: BTreeMap<String, Way> = BTreeMap::new();
     let mut all_nodes: BTreeMap<String, Node> = BTreeMap::new();
 
     for source_coord in source_coords {
-        if let Some(tile) = index.get(source_coord) {
+        let base_tile = load_cached_tile(source_coord, root_dir);
+        if let Ok(tile) = base_tile {
             for (node_id, node) in tile.get_nodes() {
                 all_nodes.insert(node_id.to_string(), node.clone());
             }
             for (way_id, way) in tile.get_ways() {
-                way_examples.insert(way_id.clone(), way);
+                way_examples.insert(way_id.clone(), way.clone());
                 match way_proxies.entry(way_id.clone()) {
                     Vacant(entry) => {
                         let mut new_proxy = WayProxy::new();
@@ -101,7 +101,7 @@ pub fn create_merged_tile<'a>(
     for (way_id, proxy) in way_proxies.iter_mut() {
         let mut processed_tiles = BTreeSet::new();
         for source_coord in source_coords {
-            processed_tiles.insert(source_coord.clone());
+            processed_tiles.insert(*source_coord);
         }
         while let Err(nodes) = proxy.check_integrity() {
             let mut tile_coords = BTreeSet::new();
@@ -116,18 +116,16 @@ pub fn create_merged_tile<'a>(
                 break;
             }
             for candidate_coord in tile_coords {
-                if let Some(tile) = index.get(&candidate_coord) {
-                    let way = tile
-                        .get_ways()
-                        .get(way_id)
-                        .expect("Tile doesn't contain way?");
-                    proxy.add_way(way);
-                    for node_id in way.get_nodes() {
-                        let node = tile
-                            .get_nodes()
-                            .get(node_id)
-                            .expect("Tile doesn't contain node?");
-                        all_nodes.insert(node_id.to_string(), node.clone());
+                if let Ok(tile) = load_cached_tile(&candidate_coord, root_dir) {
+                    if let Some(way) = tile.get_ways().get(way_id) {
+                        proxy.add_way(way);
+                        for node_id in way.get_nodes() {
+                            let node = tile
+                                .get_nodes()
+                                .get(node_id)
+                                .expect("Tile doesn't contain node?");
+                            all_nodes.insert(node_id.to_string(), node.clone());
+                        }
                     }
                 }
                 processed_tiles.insert(candidate_coord);

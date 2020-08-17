@@ -10,13 +10,6 @@ impl TileCoordinate {
         TileCoordinate {x, y, zoom}
     }
 
-    pub fn get_parent(&self) -> TileCoordinate {
-        let new_zoom = self.zoom - 1;
-        let new_x = self.x / 2;
-        let new_y = self.y / 2;
-        TileCoordinate::new(new_x, new_y, new_zoom)
-    }
-
     pub fn get_children(&self) -> [TileCoordinate; 4] {
         [
             TileCoordinate::new(self.x * 2,     self.y * 2,     self.zoom + 1),

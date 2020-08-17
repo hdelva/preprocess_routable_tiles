@@ -1,48 +1,17 @@
 use crate::entities::segment::WeightedSegment;
-use radix_heap::Radix;
-use std::cmp::Ordering;
 use std::collections::btree_map::Entry;
 use std::collections::{BTreeMap, BTreeSet, HashSet};
 
-#[derive(Copy, Clone, Eq, PartialEq)]
-struct State {
-    cost: i64,
-    position: usize,
-}
-
-impl Radix for State {
-    #[inline]
-    fn radix_similarity(&self, other: &State) -> u32 {
-        (self.cost ^ other.cost).leading_zeros()
-    }
-
-    const RADIX_BITS: u32 = (std::mem::size_of::<i64>() * 8) as u32;
-}
-
-impl Ord for State {
-    fn cmp(&self, other: &State) -> Ordering {
-        self.cost
-            .cmp(&other.cost)
-            .then_with(|| self.position.cmp(&other.position))
-    }
-}
-
-impl PartialOrd for State {
-    fn partial_cmp(&self, other: &State) -> Option<Ordering> {
-        Some(self.cmp(other))
-    }
-}
-
 #[derive(Debug)]
-struct Edge {
-    cost: i64,
-    node: usize,
+pub struct Edge {
+    pub cost: i64,
+    pub node: usize,
 }
 
 pub struct Graph<'a> {
-    ids: Vec<&'a str>,
-    labels: BTreeMap<&'a str, usize>,
-    adj_list: Vec<Vec<Edge>>,
+    pub ids: Vec<&'a str>,
+    pub labels: BTreeMap<&'a str, usize>,
+    pub adj_list: Vec<Vec<Edge>>,
 }
 
 impl<'a> Graph<'a> {
@@ -61,6 +30,20 @@ impl<'a> Graph<'a> {
 
     pub fn add_edges(&mut self, segments: Vec<WeightedSegment<'a>>) {
         for segment in segments {
+            if segment.segment.from == "http://www.openstreetmap.org/node/3182200179" {
+                eprintln!("{:?}", segment);
+            }
+            if segment.segment.to == "http://www.openstreetmap.org/node/3182200179" {
+                eprintln!("{:?}", segment);
+            }
+
+            if segment.segment.from == "http://www.openstreetmap.org/node/1428406498" {
+                eprintln!("{:?}", segment);
+            }
+            if segment.segment.to == "http://www.openstreetmap.org/node/1428406498" {
+                eprintln!("{:?}", segment);
+            }
+
             let from_label = self.get_label_mut(segment.segment.from);
             let to_label = self.get_label_mut(segment.segment.to);
             let edge = Edge {
@@ -89,49 +72,28 @@ impl<'a> Graph<'a> {
         self.labels.get(id)
     }
 
-    pub fn necessary_nodes(&self, from: &str, to: Vec<&String>) -> BTreeSet<String> {
+    pub fn necessary_nodes(&self, from: &str, to: Vec<&String>, known_nodes: &mut BTreeSet<String>) {
         if self.get_label(from).is_none() {
-            return BTreeSet::new();
+            return;
         }
         let from_label = *self.get_label(from).unwrap();
-        let (tree, _) = self.query_one_to_many(from, &to);
-
-        let mut result = BTreeSet::new();
+        let tree = self.query_one_to_many(from, &to);
 
         for to_id in to {
             if self.get_label(to_id).is_none() {
                 continue;
             }
             let mut current_label = *self.get_label(to_id).unwrap();
-            result.insert(self.ids[current_label].to_owned());
+            known_nodes.insert(self.ids[current_label].to_owned());
             while tree[current_label] != from_label {
-                result.insert(self.ids[current_label].to_owned());
                 current_label = tree[current_label];
+                known_nodes.insert(self.ids[current_label].to_owned());
             }
-            result.insert(self.ids[current_label].to_owned());
+            known_nodes.insert(self.ids[from_label].to_owned());
         }
-
-        result
     }
 
-    pub fn query_costs(&self, from: &str, to: Vec<&String>) -> BTreeMap<String, i64> {
-        if self.get_label(from).is_none() {
-            return BTreeMap::new();
-        }
-        let (_, costs) = self.query_one_to_many(from, &to);
-
-        let mut result = BTreeMap::new();
-
-        for to_id in to {
-            if let Some(to_label) = self.get_label(to_id) {
-                result.insert(to_id.to_owned(), costs[*to_label]);
-            }
-        }
-
-        result
-    }
-
-    fn query_one_to_many(&self, from: &str, to: &[&String]) -> (Vec<usize>, Vec<i64>) {
+    fn query_one_to_many(&self, from: &str, to: &[&String]) -> Vec<usize> {
         let from_label = *self.get_label(from).unwrap();
         let mut to_labels: HashSet<usize> = to
             .iter()
@@ -141,20 +103,16 @@ impl<'a> Graph<'a> {
             .collect();
         let mut dist = vec![std::i64::MIN; self.adj_list.len()];
         let mut previous = vec![from_label; self.adj_list.len()];
-        let mut heap = radix_heap::RadixHeapMap::new();
+        let mut queue = priority_queue::PriorityQueue::new();
 
         dist[from_label] = 0;
-        heap.push(0, from_label);
+        queue.push(from_label, 0);
 
-        while let Some((cost, position)) = heap.pop() {
+        while let Some((position, cost)) = queue.pop() {
             to_labels.remove(&position);
 
             if to_labels.is_empty() {
                 break;
-            }
-
-            if cost < dist[position] {
-                continue;
             }
 
             for edge in &self.adj_list[position] {
@@ -162,12 +120,13 @@ impl<'a> Graph<'a> {
                 let next_cost = cost - edge.cost;
 
                 if next_cost > dist[next_position] {
-                    heap.push(next_cost, next_position);
+                    queue.push(next_position, next_cost);
                     dist[next_position] = next_cost;
                     previous[next_position] = position;
                 }
             }
         }
-        return (previous, dist);
+
+        previous
     }
 }

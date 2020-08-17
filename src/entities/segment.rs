@@ -1,8 +1,10 @@
+#[derive(Debug)]
 pub struct Segment<'a> {
     pub from: &'a str,
     pub to: &'a str,
 }
 
+#[derive(Debug)]
 pub struct WeightedSegment<'a> {
     pub segment: Segment<'a>,
     pub weight: u64,

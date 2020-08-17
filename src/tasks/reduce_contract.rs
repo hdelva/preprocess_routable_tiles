@@ -1,3 +1,4 @@
+use crate::io::tiles::load_tile;
 use crate::entities::node::Node;
 use crate::entities::tile::DerivedTile;
 use crate::entities::tile::Tile;
@@ -78,26 +79,28 @@ fn contract_way(way: &Way, tile: &Tile, useful_nodes: &BTreeSet<String>) -> Way 
 }
 
 pub fn create_contracted_tile<'a>(
-    index: &'a BTreeMap<TileCoordinate, Tile>,
+    root_dir: &str,
     coord: &'a TileCoordinate,
 ) -> DerivedTile {
-    let tile = index.get(coord).expect("Inconsistent data");
+    let base_tile = load_tile(coord, root_dir);
     let bounds = get_tile_edges(coord);
 
-    let useful_nodes = get_useful_nodes(tile, bounds);
     let mut reduced_ways: BTreeMap<String, Way> = BTreeMap::new();
     let mut reduced_nodes: BTreeMap<String, Node> = BTreeMap::new();
+    if let Ok(tile) = base_tile {
+        let useful_nodes = get_useful_nodes(&tile, bounds);
 
-    for (node_id, node) in tile.get_nodes() {
-        if useful_nodes.contains(node_id) {
-            reduced_nodes.insert(node_id.to_string(), node.clone());
+        for (node_id, node) in tile.get_nodes() {
+            if useful_nodes.contains(node_id) {
+                reduced_nodes.insert(node_id.to_string(), node.clone());
+            }
+        }
+
+        for (way_id, way) in tile.get_ways() {
+            let new_way = contract_way(way, &tile, &useful_nodes);
+            reduced_ways.insert(way_id.clone(), new_way);
         }
     }
 
-    for (way_id, way) in tile.get_ways() {
-        let new_way = contract_way(way, tile, &useful_nodes);
-        reduced_ways.insert(way_id.clone(), new_way);
-    }
-
-    DerivedTile::new(*tile.get_coordinate(), reduced_nodes, reduced_ways)
+    DerivedTile::new(*coord, reduced_nodes, reduced_ways)
 }

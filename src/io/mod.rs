@@ -17,10 +17,19 @@ pub fn get_bicycle_profile_path() -> &'static str {
 }
 
 pub fn get_tile_path(root: &str, tile: &TileCoordinate) -> String {
-    let dir = format!("{}/{}/{}/", root, tile.zoom, tile.x);
+    let dir = format!("{}/{}/{}", root, tile.zoom, tile.x);
     if fs::metadata(&dir).is_err() {
         fs::create_dir_all(&dir).ok();
     }
 
     format!("{}/{}.json", dir, tile.y)
+}
+
+pub fn get_binary_tile_path(root: &str, tile: &TileCoordinate) -> String {
+    let dir = format!("{}/{}/{}", root, tile.zoom, tile.x);
+    if fs::metadata(&dir).is_err() {
+        fs::create_dir_all(&dir).ok();
+    }
+
+    format!("{}/{}.bin", dir, tile.y)
 }

@@ -65,7 +65,7 @@ SUBCOMMANDS:
 **Example 1**: Merging tiles of zoom level 14, to create a tiles of zoom level 13
 
 ```
-./target/release/preprocess --area belgium --zoom 14 -i ./tiles -o ./tiles merge
+./target/release/preprocess --area belgium --zoom 13 -i ./tiles -o ./tiles merge
 ```
 
 **Example 2**: Creating zoom level 14 tiles suitable for pedestrians
