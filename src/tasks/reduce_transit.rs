@@ -112,15 +112,16 @@ pub fn create_indirect_transit_tile<'a>(
 
         let mut necessary_nodes = BTreeSet::new();
         for first_node in edge_nodes.iter() {
-            graph.necessary_nodes(
+            let new_nodes = graph.necessary_nodes(
                 first_node,
                 edge_nodes
                     .iter()
                     .filter(|id| *id != first_node)
                     .map(|id| id)
                     .collect(),
-                    &mut necessary_nodes,
             );
+
+            necessary_nodes.extend(new_nodes);
         }
 
         for (way_id, way) in tile.get_ways() {
@@ -173,15 +174,16 @@ pub fn create_transit_tile<'a>(
         let edge_nodes = get_edge_nodes(&tile, bounds);
         let mut necessary_nodes = BTreeSet::new();
         for first_node in edge_nodes.iter() {
-            graph.necessary_nodes(
+            let new_nodes = graph.necessary_nodes(
                 first_node,
                 edge_nodes
                     .iter()
                     .filter(|id| *id != first_node)
                     .map(|id| id)
                     .collect(),
-                    &mut necessary_nodes,
             );
+
+            necessary_nodes.extend(new_nodes);
         }
 
         for (way_id, way) in tile.get_ways() {

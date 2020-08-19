@@ -58,25 +58,28 @@ impl<'a> Graph<'a> {
         self.labels.get(id)
     }
 
-    pub fn necessary_nodes(&self, from: &str, to: Vec<&String>, known_nodes: &mut BTreeSet<String>) {
+    pub fn necessary_nodes(&self, from: &str, to: Vec<&String>) -> BTreeSet<String> {
         if self.get_label(from).is_none() {
-            return;
+            return BTreeSet::new();
         }
         let from_label = *self.get_label(from).unwrap();
         let tree = self.query_one_to_many(from, &to);
 
+        let mut used_nodes = BTreeSet::new();
         for to_id in to {
             if self.get_label(to_id).is_none() {
                 continue;
             }
             let mut current_label = *self.get_label(to_id).unwrap();
-            known_nodes.insert(self.ids[current_label].to_owned());
+            used_nodes.insert(self.ids[current_label].to_owned());
             while tree[current_label] != from_label {
                 current_label = tree[current_label];
-                known_nodes.insert(self.ids[current_label].to_owned());
+                used_nodes.insert(self.ids[current_label].to_owned());
             }
-            known_nodes.insert(self.ids[from_label].to_owned());
+            used_nodes.insert(self.ids[from_label].to_owned());
         }
+
+        used_nodes
     }
 
     fn query_one_to_many(&self, from: &str, to: &[&String]) -> Vec<usize> {
