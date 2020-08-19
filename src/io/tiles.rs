@@ -2,7 +2,7 @@ use crate::entities::weighted_tile::WeightedTile;
 use crate::io::get_tile_path;
 use serde_json::{json, Value};
 use std::fs::File;
-use std::io::Read;
+use std::io::{Write, Read};
 
 use crate::entities::node::Node;
 use crate::entities::tile::{Tile, DerivedTile};
@@ -14,37 +14,39 @@ use cached::SizedCache;
 use flexbuffers::FlexbufferSerializer;
 use serde::Serialize;
 
-#[derive(Debug, Clone)]
-pub enum Error {
+use thiserror::Error;
+use anyhow::Result;
+
+use flate2::Compression;
+use flate2::{read::GzDecoder, write::GzEncoder};
+
+#[derive(Error, Debug, Clone)]
+pub enum TileError {
+    #[error("Invalid file path `{0}`")]
     NotAFile(String),
+    #[error("Invalid file `{0}`")]
     InvalidFile(String),
+    #[error("Invalid JSON")]
     NotJson,
+    #[error("Invalid JSON-LD")]
     MissingID,
+    #[error("Invalid Tile")]
     MissingLatitude,
+    #[error("Invalid Tile")]
     MissingLongitude,
+    #[error("Invalid Tile")]
     MissingNodes,
 }
 
-pub fn load_tile(coordinate: &TileCoordinate, root_dir: &str) -> Result<Tile, Error> {
-    let path = get_tile_path(root_dir, &coordinate);
-    let mut file = match File::open(&path) {
-        Ok(file) => file,
-        _ => return Err(Error::NotAFile(path)),
-    };
-
-    let mut data = String::new();
-    if file.read_to_string(&mut data).is_err() {
-        return Err(Error::InvalidFile(path));
-    }
-
+pub fn parse_tile(coordinate: &TileCoordinate, data: String, ) -> Result<Tile, TileError> {
     let v: Value = match serde_json::from_str(&data) {
         Ok(v) => v,
-        Err(_) => return Err(Error::NotJson),
+        Err(_) => return Err(TileError::NotJson),
     };
 
     let graph = match v["@graph"].as_array() {
         Some(graph) => graph,
-        None => return Err(Error::NotJson),
+        None => return Err(TileError::NotJson),
     };
 
     let mut nodes = BTreeMap::new();
@@ -68,7 +70,26 @@ pub fn load_tile(coordinate: &TileCoordinate, root_dir: &str) -> Result<Tile, Er
     Ok(Tile::new(*coordinate, nodes, ways))
 }
 
-pub fn load_cached_tile(coordinate: &TileCoordinate, root_dir: &str) -> Result<Tile, Error> {
+pub fn load_tile(coordinate: &TileCoordinate, root_dir: &str) -> Result<Tile, TileError> {
+    let path = get_tile_path(root_dir, &coordinate);
+    let file = match File::open(&path) {
+        Ok(file) => file,
+        _ => return Err(TileError::NotAFile(path)),
+    };
+
+    //let mut raw_bytes = Vec::new();
+    //file.read_exact(&mut raw_bytes).unwrap();
+
+    let mut decoder = GzDecoder::new(&file);
+    let mut data = String::new();
+    if decoder.read_to_string(&mut data).is_err() {
+        return Err(TileError::InvalidFile(path));
+    }
+
+    parse_tile(coordinate, data)
+}
+
+pub fn load_cached_tile(coordinate: &TileCoordinate, root_dir: &str) -> Result<Tile, TileError> {
     match coordinate.zoom {
         14 => {
             load_cached_tile_l14(coordinate, root_dir)
@@ -92,73 +113,73 @@ pub fn load_cached_tile(coordinate: &TileCoordinate, root_dir: &str) -> Result<T
 }
 
 cached_key!{
-    L14: SizedCache<String, Result<Tile, Error>> = SizedCache::with_size(400);
+    L14: SizedCache<String, Result<Tile, TileError>> = SizedCache::with_size(400);
     Key = { format!("{}/{}/{}/{}", root_dir, coordinate.zoom, coordinate.x, coordinate.y) };
 
-    fn load_cached_tile_l14(coordinate: &TileCoordinate, root_dir: &str) -> Result<Tile, Error> = {
+    fn load_cached_tile_l14(coordinate: &TileCoordinate, root_dir: &str) -> Result<Tile, TileError> = {
         load_tile(coordinate, root_dir)
     }
 }
 
 cached_key!{
-    L13: SizedCache<String, Result<Tile, Error>> = SizedCache::with_size(200);
+    L13: SizedCache<String, Result<Tile, TileError>> = SizedCache::with_size(200);
     Key = { format!("{}/{}/{}/{}", root_dir, coordinate.zoom, coordinate.x, coordinate.y) };
 
-    fn load_cached_tile_l13(coordinate: &TileCoordinate, root_dir: &str) -> Result<Tile, Error> = {
+    fn load_cached_tile_l13(coordinate: &TileCoordinate, root_dir: &str) -> Result<Tile, TileError> = {
         load_tile(coordinate, root_dir)
     }
 }
 
 cached_key!{
-    L12: SizedCache<String, Result<Tile, Error>> = SizedCache::with_size(100);
+    L12: SizedCache<String, Result<Tile, TileError>> = SizedCache::with_size(100);
     Key = { format!("{}/{}/{}/{}", root_dir, coordinate.zoom, coordinate.x, coordinate.y) };
 
-    fn load_cached_tile_l12(coordinate: &TileCoordinate, root_dir: &str) -> Result<Tile, Error> = {
+    fn load_cached_tile_l12(coordinate: &TileCoordinate, root_dir: &str) -> Result<Tile, TileError> = {
         load_tile(coordinate, root_dir)
     }
 }
 
 cached_key!{
-    L11: SizedCache<String, Result<Tile, Error>> = SizedCache::with_size(50);
+    L11: SizedCache<String, Result<Tile, TileError>> = SizedCache::with_size(50);
     Key = { format!("{}/{}/{}/{}", root_dir, coordinate.zoom, coordinate.x, coordinate.y) };
 
-    fn load_cached_tile_l11(coordinate: &TileCoordinate, root_dir: &str) -> Result<Tile, Error> = {
+    fn load_cached_tile_l11(coordinate: &TileCoordinate, root_dir: &str) -> Result<Tile, TileError> = {
         load_tile(coordinate, root_dir)
     }
 }
 
 cached_key!{
-    L10: SizedCache<String, Result<Tile, Error>> = SizedCache::with_size(25);
+    L10: SizedCache<String, Result<Tile, TileError>> = SizedCache::with_size(25);
     Key = { format!("{}/{}/{}/{}", root_dir, coordinate.zoom, coordinate.x, coordinate.y) };
 
-    fn load_cached_tile_l10(coordinate: &TileCoordinate, root_dir: &str) -> Result<Tile, Error> = {
+    fn load_cached_tile_l10(coordinate: &TileCoordinate, root_dir: &str) -> Result<Tile, TileError> = {
         load_tile(coordinate, root_dir)
     }
 }
 
 cached_key!{
-    LX: SizedCache<String, Result<Tile, Error>> = SizedCache::with_size(20);
+    LX: SizedCache<String, Result<Tile, TileError>> = SizedCache::with_size(20);
     Key = { format!("{}/{}/{}/{}", root_dir, coordinate.zoom, coordinate.x, coordinate.y) };
 
-    fn load_cached_tile_lx(coordinate: &TileCoordinate, root_dir: &str) -> Result<Tile, Error> = {
+    fn load_cached_tile_lx(coordinate: &TileCoordinate, root_dir: &str) -> Result<Tile, TileError> = {
         load_tile(coordinate, root_dir)
     }
 }
 
-fn create_node(entity: &Value) -> Result<Node, Error> {
+fn create_node(entity: &Value) -> Result<Node, TileError> {
     let id = match entity["@id"].as_str() {
         Some(id) => id.to_owned(),
-        _ =>  return Err(Error::MissingID),
+        _ =>  return Err(TileError::MissingID),
     };
 
     let lat = match entity["geo:lat"].as_f64() {
         Some(id) => id,
-        _ => return Err(Error::MissingLatitude),
+        _ => return Err(TileError::MissingLatitude),
     };
 
     let long = match entity["geo:long"].as_f64() {
         Some(id) => id,
-        _ => return Err(Error::MissingLongitude),
+        _ => return Err(TileError::MissingLongitude),
     };
 
     let mut tags = BTreeMap::new();
@@ -166,10 +187,8 @@ fn create_node(entity: &Value) -> Result<Node, Error> {
         if key != "osm:hasNodes" && key.starts_with("osm:") {
             if value.is_string() {
                 tags.insert(key.to_string(), value.as_str().unwrap().to_owned());
-            } else if value.is_array() {
-                // probably hasTag
             } else {
-                println!("{} {}", key, value);
+                // println!("{} {}", key, value);
             }
         }
     }
@@ -185,17 +204,17 @@ fn create_node(entity: &Value) -> Result<Node, Error> {
     Ok(Node::new(id, lat, long, tags, undefined_tags))
 }
 
-fn create_way(entity: &Value) -> Result<Way, Error> {
+fn create_way(entity: &Value) -> Result<Way, TileError> {
     let id = match entity["@id"].as_str() {
         Some(id) => id.to_owned(),
-        _ =>  return Err(Error::MissingID),
+        _ =>  return Err(TileError::MissingID),
     };
 
     let nodes: Vec<String> = match entity["osm:hasNodes"].as_array() {
         Some(nodes) => {
             nodes.iter().map(|id| id.as_str().unwrap().to_string()).collect()
         },
-        _ => return Err(Error::MissingNodes),
+        _ => return Err(TileError::MissingNodes),
     };
 
     let mut tags = BTreeMap::new();
@@ -228,7 +247,7 @@ fn create_way(entity: &Value) -> Result<Way, Error> {
     Ok(Way::new(id, nodes, None, max_speed, tags, undefined_tags))
 }
 
-pub fn write_derived_tile(tile: DerivedTile, path: &str) {
+pub fn write_derived_tile(tile: DerivedTile, path: &str) -> Result<()> {
     let mut graph: Vec<Value> = tile.get_nodes().values().map(|node| {
         let mut blob = BTreeMap::new();
         blob.insert("@type".to_owned(), json!("osm:Node"));
@@ -337,7 +356,12 @@ pub fn write_derived_tile(tile: DerivedTile, path: &str) {
         "@graph": graph
     });
 
-    fs::write(path, file.to_string()).expect("Unable to write file");
+    let mut e = GzEncoder::new(Vec::new(), Compression::default());
+    e.write_all(file.to_string().as_bytes())?;
+    let compressed_bytes = e.finish()?;
+    fs::write(path, compressed_bytes).expect("Unable to write file");
+
+    Ok(())
 }
 
 pub fn write_flexbuffers_tile(tile: WeightedTile, path: &str) {

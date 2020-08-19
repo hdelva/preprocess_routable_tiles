@@ -22,7 +22,7 @@ pub fn get_tile_path(root: &str, tile: &TileCoordinate) -> String {
         fs::create_dir_all(&dir).ok();
     }
 
-    format!("{}/{}.json", dir, tile.y)
+    format!("{}/{}.jsonld.zip", dir, tile.y)
 }
 
 pub fn get_binary_tile_path(root: &str, tile: &TileCoordinate) -> String {

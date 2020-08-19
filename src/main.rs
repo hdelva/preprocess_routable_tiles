@@ -3,6 +3,7 @@
 extern crate clap;
 #[macro_use] extern crate cached;
 
+use crate::tasks::load_tile::fetch_tile;
 use crate::io::tiles::write_flexbuffers_tile;
 use crate::tasks::reduce_binary::create_binary_tile;
 use crate::io::get_binary_tile_path;
@@ -30,9 +31,29 @@ use crate::io::tiles::write_derived_tile;
 use crate::util::get_tile_coords;
 use indicatif::{ProgressBar, ProgressStyle};
 use rayon::prelude::*;
+use std::str::FromStr;
 use entities::tile_coord::TileCoordinate;
 
-// create weighted edge graph around a given tile
+enum Areas {
+    Belgium,
+    London,
+    Pyrenees,
+    Dummy,
+}
+
+impl FromStr for Areas {
+    type Err = &'static str;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "belgium" => Ok(Areas::Belgium),
+            "london" => Ok(Areas::London),
+            "pyrenees" => Ok(Areas::Pyrenees),
+            "dummy" => Ok(Areas::Dummy),
+            _ => Err("no match"),
+        }
+    }
+}
 
 fn main() {
     let matches = App::new("Routable Tiles Preprocessing")
@@ -44,9 +65,9 @@ fn main() {
             Arg::with_name("area")
                 .short('a')
                 .long("area")
-                .value_name("benelux|belgium|dummy")
+                .value_name("london|belgium|dummy|pyrenees")
                 .about("Sets the bounding box")
-                .possible_values(&["belgium", "dummy", "benelux"])
+                .possible_values(&["belgium", "dummy", "london", "pyrenees"])
                 .required(true)
                 .takes_value(true),
         )
@@ -159,6 +180,10 @@ fn main() {
             App::new("merge")
                 .about("Merge routable tiles into tiles of a higher zoom level"),
         )
+        .subcommand(
+            App::new("load_tiles")
+                .about("Fetches tiles from the given data source and store them locally"),
+        )
         .get_matches();
 
     let zoom = matches
@@ -167,11 +192,12 @@ fn main() {
         .parse::<u32>()
         .expect("Invalid zoom level");
 
-    let [lats, lons] = match matches.value_of("area").unwrap() {
-        "benelux" => [[48.9224992637582, 55.77657301866769], [0., 11.25]],
-        "belgium" => [[49., 52.], [2.25, 6.6]],
-        "dummy" => [[51.15, 51.25], [4.40, 4.5]],
-        _ => unreachable!(),
+    let area = matches.value_of_t("area").unwrap_or_else(|e| e.exit());
+    let [lats, lons] = match area {
+        Areas::London => [[51.2424, 51.7334], [-0.5637, 0.3114]], // very dense
+        Areas::Belgium => [[49.421, 51.532], [2.4153, 6.5626]], // medium dense
+        Areas::Pyrenees => [[41.8872, 43.4263], [-1.9133, 3.3382]], // sparse
+        Areas::Dummy => [[51.15, 51.25], [4.40, 4.5]], // tiny piece of belgium
     };
 
     let input_dir = matches.value_of("input").unwrap();
@@ -203,7 +229,7 @@ fn main() {
             todo.par_iter().for_each(|id| {
                 let profile_tile_path = get_tile_path(output_dir, id);
                 let profile_tile = create_profile_tile(input_dir, id, &profile);
-                write_derived_tile(profile_tile, &profile_tile_path);
+                write_derived_tile(profile_tile, &profile_tile_path).unwrap();
                 progress.inc(1);
             });
 
@@ -234,7 +260,7 @@ fn main() {
             todo.par_iter().for_each(|id| {
                 let profile_tile_path = get_tile_path(output_dir, id);
                 let profile_tile = create_transit_tile(input_dir, id, &profile);
-                write_derived_tile(profile_tile, &profile_tile_path);
+                write_derived_tile(profile_tile, &profile_tile_path).unwrap();
                 progress.inc(1);
             });
 
@@ -277,7 +303,7 @@ fn main() {
                     id,
                     &profile,
                 );
-                write_derived_tile(profile_tile, &profile_tile_path);
+                write_derived_tile(profile_tile, &profile_tile_path).unwrap();
                 progress.inc(1);
             });
 
@@ -295,7 +321,7 @@ fn main() {
             todo.par_iter().for_each(|id| {
                 let contracted_tile_path = get_tile_path(output_dir, id);
                 let contracted_tile = create_contracted_tile(input_dir, id);
-                write_derived_tile(contracted_tile, &contracted_tile_path);
+                write_derived_tile(contracted_tile, &contracted_tile_path).unwrap();
                 progress.inc(1);
             });
 
@@ -314,7 +340,7 @@ fn main() {
                 let merged_tile_path = get_tile_path(output_dir, id);
                 let c = id.get_children();
                 let merged_tile = create_merged_tile(input_dir, &c, id);
-                write_derived_tile(merged_tile, &merged_tile_path);
+                write_derived_tile(merged_tile, &merged_tile_path).unwrap();
                 progress.inc(1);
             });
 
@@ -347,6 +373,28 @@ fn main() {
                 write_flexbuffers_tile(binary_tile, &merged_tile_path);
                 progress.inc(1);
             });
+
+            progress.finish();
+        }
+        Some("load_tiles") => {
+            let todo = get_tile_coords(lats, lons, zoom);
+            let progress = ProgressBar::new(todo.len() as u64);
+            progress.set_style(
+                ProgressStyle::default_bar()
+                    .template("Loading tiles [{elapsed_precise}] {wide_bar:.cyan/blue} {pos:>7}/{len:7} {msg}")
+                    .progress_chars("█▓░"),
+            );
+
+            let failed: Vec<TileCoordinate> = todo.par_iter().filter_map(|id| {
+                if let Ok(()) = fetch_tile(input_dir, output_dir, id) {
+                    progress.inc(1);
+                    return None
+                }
+                
+               Some(*id)
+            }).collect();
+
+            eprintln!("Failed to get {} tiles\nThis might be ok, some tiles don't exist", failed.len());
 
             progress.finish();
         }
