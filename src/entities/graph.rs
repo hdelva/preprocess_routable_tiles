@@ -30,20 +30,6 @@ impl<'a> Graph<'a> {
 
     pub fn add_edges(&mut self, segments: Vec<WeightedSegment<'a>>) {
         for segment in segments {
-            if segment.segment.from == "http://www.openstreetmap.org/node/3182200179" {
-                eprintln!("{:?}", segment);
-            }
-            if segment.segment.to == "http://www.openstreetmap.org/node/3182200179" {
-                eprintln!("{:?}", segment);
-            }
-
-            if segment.segment.from == "http://www.openstreetmap.org/node/1428406498" {
-                eprintln!("{:?}", segment);
-            }
-            if segment.segment.to == "http://www.openstreetmap.org/node/1428406498" {
-                eprintln!("{:?}", segment);
-            }
-
             let from_label = self.get_label_mut(segment.segment.from);
             let to_label = self.get_label_mut(segment.segment.to);
             let edge = Edge {

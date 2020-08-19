@@ -77,9 +77,6 @@ pub fn load_tile(coordinate: &TileCoordinate, root_dir: &str) -> Result<Tile, Ti
         _ => return Err(TileError::NotAFile(path)),
     };
 
-    //let mut raw_bytes = Vec::new();
-    //file.read_exact(&mut raw_bytes).unwrap();
-
     let mut decoder = GzDecoder::new(&file);
     let mut data = String::new();
     if decoder.read_to_string(&mut data).is_err() {

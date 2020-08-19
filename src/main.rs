@@ -401,3 +401,50 @@ fn main() {
         _ => unreachable!(),
     };
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use io::tiles::load_tile;
+
+    #[test]
+    fn test_parse() {
+        let coord = TileCoordinate::new(8345, 5495, 14);
+        let tile = load_tile(&coord, "./test_data").unwrap();
+        assert_eq!(tile.get_nodes().len(), 725);
+        assert_eq!(tile.get_ways().len(), 176);
+    }
+
+    #[test]
+    fn test_profile() {
+        let car_profile = load_car_profile().unwrap();
+        let coord = TileCoordinate::new(8345, 5495, 14);
+        let tile = create_profile_tile("./test_data", &coord, &car_profile);
+        assert_eq!(tile.get_nodes().len(), 669);
+        assert_eq!(tile.get_ways().len(), 157);
+
+        let bike_profile = load_bicycle_profile().unwrap();
+        let coord = TileCoordinate::new(8345, 5495, 14);
+        let tile = create_profile_tile("./test_data", &coord, &bike_profile);
+        assert_eq!(tile.get_nodes().len(), 630);
+        assert_eq!(tile.get_ways().len(), 141);
+    }
+
+    #[test]
+    fn test_transit() {
+        let profile = load_car_profile().unwrap();
+        let coord = TileCoordinate::new(8345, 5495, 14);
+        let tile = create_transit_tile("./test_data", &coord, &profile);
+        assert_eq!(tile.get_nodes().len(), 470);
+        assert_eq!(tile.get_ways().len(), 109);
+    }
+
+    #[test]
+    fn test_padded_transit() {
+        let profile = load_car_profile().unwrap();
+        let coord = TileCoordinate::new(8345, 5495, 14);
+        let tile = create_indirect_transit_tile("./test_data/", 14, &coord, &profile);
+        assert_eq!(tile.get_nodes().len(), 307);
+        assert_eq!(tile.get_ways().len(), 82);
+    }
+}
