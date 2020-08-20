@@ -5,7 +5,7 @@ use std::fs::File;
 use std::io::{Write, Read};
 
 use crate::entities::node::Node;
-use crate::entities::tile::{Tile, DerivedTile};
+use crate::entities::tile::Tile;
 use crate::entities::way::Way;
 use crate::entities::tile_coord::TileCoordinate;
 use std::{collections::BTreeMap, fs};
@@ -244,7 +244,7 @@ fn create_way(entity: &Value) -> Result<Way, TileError> {
     Ok(Way::new(id, nodes, None, max_speed, tags, undefined_tags))
 }
 
-pub fn write_derived_tile(tile: DerivedTile, path: &str) -> Result<()> {
+pub fn write_derived_tile(tile: Tile, path: &str) -> Result<()> {
     let mut graph: Vec<Value> = tile.get_nodes().values().map(|node| {
         let mut blob = BTreeMap::new();
         blob.insert("@type".to_owned(), json!("osm:Node"));

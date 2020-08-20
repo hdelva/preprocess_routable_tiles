@@ -1,4 +1,4 @@
-use crate::{io::{tiles::{write_derived_tile, parse_tile}, get_tile_path}, entities::{tile::DerivedTile, tile_coord::TileCoordinate}};
+use crate::{io::{tiles::{write_derived_tile, parse_tile}, get_tile_path}, entities::tile_coord::TileCoordinate};
 use anyhow::{Result};
 use std::path::Path;
 
@@ -17,8 +17,7 @@ pub fn fetch_tile(
         let response = client.get(&uri).send()?;
         let content =  response.text()?;
         let tile = parse_tile(coord, content)?;
-        let derived_tile = DerivedTile::new(*coord, tile.nodes, tile.ways);
-        write_derived_tile(derived_tile, &target_path).unwrap();
+        write_derived_tile(tile, &target_path).unwrap();
     }
     
     Ok(())

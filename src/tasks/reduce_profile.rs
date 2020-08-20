@@ -2,7 +2,7 @@ use crate::io::tiles::load_tile;
 use crate::entities::node::Node;
 use crate::entities::profile::Profile;
 use crate::entities::segment::Segment;
-use crate::entities::tile::DerivedTile;
+use crate::entities::tile::Tile;
 use crate::entities::tile_coord::TileCoordinate;
 use crate::entities::way::Way;
 use std::collections::BTreeMap;
@@ -11,7 +11,7 @@ pub fn create_profile_tile<'a>(
     root_dir: &str,
     coord: &'a TileCoordinate,
     profile: &Profile,
-) -> DerivedTile {
+) -> Tile {
     let tile_result = load_tile(coord, root_dir);
     let mut reduced_ways: BTreeMap<String, Way> = BTreeMap::new();
     let mut reduced_nodes: BTreeMap<String, Node> = BTreeMap::new();
@@ -51,5 +51,5 @@ pub fn create_profile_tile<'a>(
         }
     }
     
-    DerivedTile::new(*coord, reduced_nodes, reduced_ways)
+    Tile::new(*coord, reduced_nodes, reduced_ways)
 }

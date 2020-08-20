@@ -1,6 +1,5 @@
 use crate::io::tiles::load_tile;
 use crate::entities::node::Node;
-use crate::entities::tile::DerivedTile;
 use crate::entities::tile::Tile;
 use crate::entities::tile_coord::TileCoordinate;
 use crate::entities::way::Way;
@@ -81,7 +80,7 @@ fn contract_way(way: &Way, tile: &Tile, useful_nodes: &BTreeSet<String>) -> Way 
 pub fn create_contracted_tile<'a>(
     root_dir: &str,
     coord: &'a TileCoordinate,
-) -> DerivedTile {
+) -> Tile {
     let base_tile = load_tile(coord, root_dir);
     let bounds = get_tile_edges(coord);
 
@@ -102,5 +101,5 @@ pub fn create_contracted_tile<'a>(
         }
     }
 
-    DerivedTile::new(*coord, reduced_nodes, reduced_ways)
+    Tile::new(*coord, reduced_nodes, reduced_ways)
 }

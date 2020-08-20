@@ -2,7 +2,6 @@ use crate::io::tiles::load_cached_tile;
 use crate::entities::graph::Graph;
 use crate::entities::node::Node;
 use crate::entities::profile::Profile;
-use crate::entities::tile::DerivedTile;
 use crate::entities::tile::Tile;
 use crate::entities::tile_coord::TileCoordinate;
 use crate::entities::way::Way;
@@ -50,7 +49,7 @@ pub fn create_indirect_transit_tile<'a>(
     padding_zoom: u32,
     coord: &'a TileCoordinate,
     profile: &Profile,
-) -> DerivedTile {
+) -> Tile {
     // build base graph
     let base_tile = load_cached_tile(coord, root_dir);
     let mut reduced_ways = BTreeMap::new();
@@ -154,14 +153,14 @@ pub fn create_indirect_transit_tile<'a>(
         }
     }
 
-    DerivedTile::new(*coord, reduced_nodes, reduced_ways)
+    Tile::new(*coord, reduced_nodes, reduced_ways)
 }
 
 pub fn create_transit_tile<'a>(
     root_dir: &str,
     coord: &'a TileCoordinate,
     profile: &Profile,
-) -> DerivedTile {
+) -> Tile {
     let base_tile = load_tile(coord, root_dir);
     let mut reduced_ways = BTreeMap::new();
     let mut reduced_nodes = BTreeMap::new();
@@ -216,5 +215,5 @@ pub fn create_transit_tile<'a>(
         }
     }
 
-    DerivedTile::new(*coord, reduced_nodes, reduced_ways)
+    Tile::new(*coord, reduced_nodes, reduced_ways)
 }

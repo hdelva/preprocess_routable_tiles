@@ -1,6 +1,6 @@
+use crate::entities::tile::Tile;
 use crate::io::tiles::load_cached_tile;
 use crate::entities::node::Node;
-use crate::entities::tile::DerivedTile;
 use crate::entities::tile_coord::TileCoordinate;
 use crate::entities::way::Way;
 use crate::util::deg2num;
@@ -71,7 +71,7 @@ pub fn create_merged_tile<'a>(
     root_dir: &str,
     source_coords: &'a [TileCoordinate],
     target_coord: &'a TileCoordinate,
-) -> DerivedTile {
+) -> Tile {
     let mut way_proxies: BTreeMap<String, WayProxy> = BTreeMap::new();
     let mut way_examples: BTreeMap<String, Way> = BTreeMap::new();
     let mut all_nodes: BTreeMap<String, Node> = BTreeMap::new();
@@ -150,5 +150,5 @@ pub fn create_merged_tile<'a>(
         };
     }
 
-    DerivedTile::new(*target_coord, all_nodes, all_ways)
+    Tile::new(*target_coord, all_nodes, all_ways)
 }
