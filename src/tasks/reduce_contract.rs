@@ -77,6 +77,9 @@ fn contract_way(way: &Way, tile: &Tile, useful_nodes: &BTreeSet<String>) -> Way 
     )
 }
 
+// not used at the moment
+// not sure if a tile with only shortcuts is useful
+#[allow(dead_code)]
 pub fn create_contracted_tile<'a>(
     root_dir: &str,
     coord: &'a TileCoordinate,

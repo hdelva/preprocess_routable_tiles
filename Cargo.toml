@@ -1,6 +1,6 @@
 [package]
 name = "preprocess"
-version = "0.1.0"
+version = "1.0.0-alpha.1"
 authors = ["Harm Delva <harm.delva@gmail.com>"]
 edition = "2018"
 
@@ -12,7 +12,7 @@ serde_json = "1.0" # parse json
 indicatif = "0.11.0" # progress bars
 rayon = "1.1.0" # parallellization
 priority-queue = "1.0.0"
-clap = "3.0.0-beta.1"  # this might backfire, but most documentation uses this version now
+clap = { version = "3.0.0-beta.1", features = ["yaml"] }  # this might backfire, but most documentation uses this version now
 cached = "0.12.0" # for reading in tiles
 flexbuffers = "0.1.1"
 reqwest = { version = "0.10.7", features = ["gzip", "blocking"] }

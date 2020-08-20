@@ -1,0 +1,109 @@
+name: Routable Tiles Preprocessing
+version: "1.0.0-alpha.1"
+author: Harm Delva <harm.delva@ugent.be>
+about: Creates reduced versions of routable tiles (OpenStreetMap data)
+
+settings:
+    - ArgRequiredElseHelp
+    - SubcommandRequiredElseHelp
+
+args:
+    - area:
+        short: a
+        long: area
+        value_name: dummy|london|belgium|pyrenees
+        about: Sets the bounding box
+        takes_value: true
+        required: true
+        possible_values:
+          - belgium
+          - dummy
+          - london
+          - pyrenees
+    - zoom:
+        short: z
+        long: zoom
+        about: Sets the zoom level
+        required: true
+        takes_value: true
+    - input:
+        short: i
+        long: input_dir
+        about: Root directory to process of input files
+        required: true
+        takes_value: true
+    - output:
+        short: o
+        long: output_dir
+        about: Root directory to write results to
+        required: true
+        takes_value: true
+
+subcommands:
+    - reduce_profile:
+        long: reduce_profile
+        about: Only retain tags that are relevant for the given profile
+        args:
+            - profile:
+                short: p
+                long: profile
+                about: Sets the profile to use
+                possible_values:
+                    - car
+                    - bicycle
+                    - pedestrian
+                takes_value: true
+                required: true
+    - reduce_transit:
+        long: reduce_transit
+        about: Only retain elements that are necessary to traverse a tile
+        args:
+            - profile:
+                short: p
+                long: profile
+                about: Sets the profile to use
+                possible_values:
+                    - car
+                    - bicycle
+                    - pedestrian
+                takes_value: true
+                required: true
+    - reduce_padded_transit:
+        long: reduce_padded_transit
+        about: Only retain elements that are needed to traverse the area around a given tile
+        args: 
+            - profile:
+                short: p
+                long: profile
+                about: Sets the profile to use
+                possible_values:
+                    - car
+                    - bicycle
+                    - pedestrian
+                takes_value: true
+                required: true
+            - padding:
+                long: padding_level
+                about: Zoom level of the layer of padding tiles
+                takes_value: true
+                required: true
+    - reduce_binary:
+        long: reduce_binary
+        about: Store a binary encoded edge graph, instead of raw RDF data
+        args: 
+            - profile:
+                short: p
+                long: profile
+                about: Sets the profile to use
+                possible_values:
+                    - car
+                    - bicycle
+                    - pedestrian
+                takes_value: true
+                required: true
+    - merge:
+        long: merge
+        about: Merge routable tiles into tiles of the given zoom level
+    - fetch_tiles:
+        long: fetch_tiles
+        about: Fetches tiles from the given data source and store them locally
